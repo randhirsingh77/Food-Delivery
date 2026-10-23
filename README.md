@@ -25,3 +25,19 @@ Open `index.html` in a browser, or serve the folder with any static server:
 ```bash
 npx serve .
 ```
+
+## Project structure
+
+```
+index.html        the page
+css/style.css     all styles
+js/script.js      cart, search, checkout
+js/auth.js        login (Auth0)
+images/           dish photos and site images
+```
+
+## Full stack
+
+This repo is the frontend. The backend lives in
+[foodie-server](https://github.com/randhirsingh77/foodie-server) — an
+Express + MongoDB API that saves the orders placed on this site.
