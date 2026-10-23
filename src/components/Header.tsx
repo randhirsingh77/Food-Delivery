@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { cartCount, useStore } from "../store/useStore";
 import { imgUrl } from "../data/dishes";
 import CartPanel from "./CartPanel";
@@ -11,8 +10,17 @@ import AccountPanel from "./AccountPanel";
 export default function Header() {
   const s = useStore();
   const count = useStore(cartCount);
-  const { isAuthenticated, user } = useAuth0();
+  const user = useStore((st) => st.authProfile);
+  const isAuthenticated = Boolean(user);
   const headerRef = useRef<HTMLElement>(null);
+
+  // A soft shadow once the page scrolls — separates the bar from content.
+  useEffect(() => {
+    const onScroll = () => headerRef.current?.classList.toggle("scrolled", window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Close the cart/account panels when clicking anywhere outside the header.
   useEffect(() => {

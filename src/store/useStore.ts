@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Profile } from "../api/types";
 import { dishByName } from "../data/dishes";
 import { inr } from "../utils/pricing";
 
@@ -21,6 +22,10 @@ interface FoodieState {
   favsOnly: boolean;
   category: string;
   query: string;
+  view: "shop" | "profile" | "admin" | "kitchen" | "driver" | "track" | "auth";
+  authMode: "login" | "signup";
+  trackOrderId: string;
+  authProfile: Profile | null; // signed-in user (own auth system)
   orderItemsText: string; // gallery "Order Now" for non-menu items lands here
   toastMsg: string;
   toastKey: number;
@@ -37,6 +42,10 @@ interface FoodieState {
   setFavsOnly: (v: boolean) => void;
   setCategory: (v: string) => void;
   setQuery: (v: string) => void;
+  setView: (v: FoodieState["view"]) => void;
+  setAuthMode: (v: "login" | "signup") => void;
+  openTrack: (orderId: string) => void;
+  setAuthProfile: (p: Profile | null) => void;
   setOrderItemsText: (v: string) => void;
   showToast: (msg: string) => void;
 }
@@ -77,6 +86,10 @@ export const useStore = create<FoodieState>()((set, get) => ({
   favsOnly: false,
   category: "All",
   query: "",
+  view: "shop",
+  authMode: "login",
+  trackOrderId: "",
+  authProfile: null,
   orderItemsText: "",
   toastMsg: "",
   toastKey: 0,
@@ -105,6 +118,10 @@ export const useStore = create<FoodieState>()((set, get) => ({
   setFavsOnly: (v) => set({ favsOnly: v }),
   setCategory: (v) => set({ category: v }),
   setQuery: (v) => set({ query: v }),
+  setView: (v) => set({ view: v }),
+  setAuthMode: (v) => set({ authMode: v }),
+  openTrack: (orderId) => set({ trackOrderId: orderId, view: "track" }),
+  setAuthProfile: (p) => set({ authProfile: p }),
   setOrderItemsText: (v) => set({ orderItemsText: v }),
   showToast: (msg) => set({ toastMsg: msg, toastKey: Date.now() }),
 }));

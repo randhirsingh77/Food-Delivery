@@ -1,120 +1,115 @@
 import { useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
+import { api, logout } from "../api/client";
 import { useStore } from "../store/useStore";
 
-// Login lives in Auth0 (free plan): email + phone-as-username + password,
-// or Continue with Google. This panel is the React version of the original
-// auth.js panel — same texts, same flows.
-export const AUTH_CONFIG = {
-  domain: "dev-4jg6o5xx41f8s6nk.us.auth0.com",
-  clientId: "5UFiOMgsAn4zkp7hjy9NS8gw6POkttIW",
-  connection: "Username-Password-Authentication",
-};
-
-export const isGoogleUser = (user: { sub?: string } | undefined) =>
-  Boolean(user?.sub?.startsWith("google-oauth2|"));
-
-export function phoneFromUser(user: { nickname?: string; phone_number?: string } | undefined): string {
-  if (user?.nickname && /^[0-9+ ]{10,15}$/.test(user.nickname)) return user.nickname;
-  if (user?.phone_number) return user.phone_number;
-  return "";
-}
-
+// Account panel (header dropdown) for Foodie's own auth system: login /
+// signup entry points when signed out; profile links, role dashboards and
+// change-password when signed in.
 export default function AccountPanel() {
-  const { isAuthenticated, isLoading, user, loginWithRedirect, logout } = useAuth0();
+  const authProfile = useStore((s) => s.authProfile);
+  const setAuthProfile = useStore((s) => s.setAuthProfile);
+  const setAccountOpen = useStore((s) => s.setAccountOpen);
+  const setView = useStore((s) => s.setView);
+  const setAuthMode = useStore((s) => s.setAuthMode);
   const showToast = useStore((s) => s.showToast);
-  const [showSetPassNote, setShowSetPassNote] = useState(false);
 
-  const changePassword = async () => {
-    if (!user?.email) return;
+  const [showPw, setShowPw] = useState(false);
+  const [cur, setCur] = useState("");
+  const [next, setNext] = useState("");
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const go = (view: "auth" | "profile" | "admin" | "kitchen" | "driver", mode?: "login" | "signup") => {
+    if (mode) setAuthMode(mode);
+    setView(view);
+    setAccountOpen(false);
+  };
+
+  if (!authProfile) {
+    return (
+      <div className="panel account-panel">
+        <p className="panel-title">Your account</p>
+        <p className="panel-note">Login to track orders live, save addresses and check out faster.</p>
+        <button type="button" className="btn-primary panel-btn" onClick={() => go("auth", "login")}>Login</button>
+        <button type="button" className="btn-dark panel-btn" onClick={() => go("auth", "signup")}>Create account</button>
+        <p className="panel-note">New here? Creating an account takes under a minute — name, email, phone and a password.</p>
+      </div>
+    );
+  }
+
+  const changePw = async () => {
+    setMsg("");
+    if (next.length < 8) return setMsg("New password must be at least 8 characters.");
+    setBusy(true);
     try {
-      const res = await fetch(`https://${AUTH_CONFIG.domain}/dbconnections/change_password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client_id: AUTH_CONFIG.clientId, email: user.email, connection: AUTH_CONFIG.connection }),
-      });
-      if (!res.ok) throw new Error("request failed");
-      showToast("Password change link sent — check your email inbox");
-    } catch {
-      showToast("Could not send the password email right now — please try again");
+      await api.changePassword(cur, next);
+      setCur(""); setNext(""); setShowPw(false);
+      showToast("Password changed");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Could not change the password.");
+    } finally {
+      setBusy(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <aside className="cart-panel account-panel" aria-label="Your account">
-        <div className="acc-head"><h2>Account</h2></div>
-        <p className="acc-note">Loading…</p>
-      </aside>
-    );
-  }
+  const signOut = () => {
+    logout();
+    setAuthProfile(null);
+    setAccountOpen(false);
+    showToast("Logged out");
+  };
 
-  if (!isAuthenticated || !user) {
-    return (
-      <aside className="cart-panel account-panel" aria-label="Your account">
-        <div className="acc-head"><h2>Welcome to Foodie</h2></div>
-        <p className="acc-note">
-          Login to save your details and check out faster. New here? Create an account with your
-          email and phone number.
-        </p>
-        <button type="button" className="btn-primary acc-block" onClick={() => loginWithRedirect()}>Login</button>
-        <button type="button" className="btn-dark acc-block"
-          onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: "signup" } })}>
-          Create account
-        </button>
-        <button type="button" className="acc-google"
-          onClick={() => loginWithRedirect({ authorizationParams: { connection: "google-oauth2" } })}>
-          <i className="fa-brands fa-google" aria-hidden="true" /> Continue with Google
-        </button>
-        <p className="acc-note">
-          Forgot your password? Use "Forgot password" on the login page — Auth0 emails you a
-          reset link, free.
-        </p>
-      </aside>
-    );
-  }
-
-  const google = isGoogleUser(user);
-  const phone = phoneFromUser(user);
-  const initial = (user.name || user.email || "U").trim().charAt(0).toUpperCase();
+  const role = authProfile.role;
 
   return (
-    <aside className="cart-panel account-panel" aria-label="Your account">
-      <div className="acc-head"><h2>Your account</h2></div>
+    <div className="panel account-panel">
       <div className="acc-user">
-        {user.picture
-          ? <img className="acc-avatar-lg" src={user.picture} alt="" />
-          : <span className="acc-initial-lg">{initial}</span>}
+        {authProfile.picture
+          ? <img className="acc-avatar" src={authProfile.picture} alt="" />
+          : <span className="acc-initial">{(authProfile.name || authProfile.email || "U").charAt(0).toUpperCase()}</span>}
         <div>
-          <p className="acc-name">{user.name || ""}</p>
-          <p className="acc-mail">{user.email || ""}</p>
-          {phone && <p className="acc-mail">Phone: {phone}</p>}
-          {google && <p className="acc-mail">Signed in with Google</p>}
+          <p className="acc-name">{authProfile.name || "Foodie user"}</p>
+          <p className="acc-mail">{authProfile.email}{authProfile.phone ? ` · ${authProfile.phone}` : ""}</p>
+          <p className="acc-mail">Role: <strong>{role}</strong></p>
         </div>
       </div>
 
-      {google ? (
-        <>
-          <button type="button" className="btn-dark acc-block" onClick={() => setShowSetPassNote(true)}>
-            Set a password
-          </button>
-          {showSetPassNote && (
-            <p className="acc-note">
-              Your account uses Google, so Google manages your password — change it from your
-              Google account. A separate Foodie password needs account linking, which is a
-              planned next step.
-            </p>
-          )}
-        </>
-      ) : (
-        <button type="button" className="btn-dark acc-block" onClick={changePassword}>
-          Change password
+      <button type="button" className="btn-dark panel-btn" onClick={() => go("profile")}>
+        <i className="fa-solid fa-user" aria-hidden="true" /> Profile &amp; my orders
+      </button>
+      {role === "admin" && (
+        <button type="button" className="btn-dark panel-btn" onClick={() => go("admin")}>
+          <i className="fa-solid fa-chart-line" aria-hidden="true" /> Owner dashboard
         </button>
       )}
-      <button type="button" className="btn-primary acc-block"
-        onClick={() => logout({ logoutParams: { returnTo: window.location.origin + "/Food-Delivery/" } })}>
-        Logout
-      </button>
-    </aside>
+      {(role === "manager" || role === "admin") && (
+        <button type="button" className="btn-dark panel-btn" onClick={() => go("kitchen")}>
+          <i className="fa-solid fa-fire-burner" aria-hidden="true" /> Kitchen
+        </button>
+      )}
+      {role === "driver" && (
+        <button type="button" className="btn-dark panel-btn" onClick={() => go("driver")}>
+          <i className="fa-solid fa-motorcycle" aria-hidden="true" /> Driver dashboard
+        </button>
+      )}
+
+      {showPw ? (
+        <div className="pw-box">
+          <div className="field">
+            <label htmlFor="curPw">Current password</label>
+            <input id="curPw" type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
+          </div>
+          <div className="field">
+            <label htmlFor="newPw">New password</label>
+            <input id="newPw" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
+          </div>
+          {msg && <p className="form-err" role="alert">{msg}</p>}
+          <button type="button" className="btn-primary panel-btn" onClick={changePw} disabled={busy}>{busy ? "Saving…" : "Save new password"}</button>
+        </div>
+      ) : (
+        <button type="button" className="btn-dark panel-btn" onClick={() => setShowPw(true)}>Change password</button>
+      )}
+      <button type="button" className="btn-dark panel-btn" onClick={signOut}>Logout</button>
+    </div>
   );
 }
