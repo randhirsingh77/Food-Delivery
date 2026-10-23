@@ -18,6 +18,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Foodie",
+  "url": "https://randhirsingh77.github.io/Food-Delivery/",
+  "image": "https://randhirsingh77.github.io/Food-Delivery/image/main_img.png",
+  "servesCuisine": ["Fast Food", "Italian", "Indian"],
+  "priceRange": "₹",
+  "address": { "@type": "PostalAddress", "addressLocality": "New Delhi", "addressCountry": "IN" },
+  "openingHours": "Mo-Su 11:00-23:00",
+  "email": "rs6201849307@gmail.com"
+}
+</script>
 </head>
 <body>
 
@@ -36,7 +50,7 @@
     </ul>
 
     <div class="nav-icons">
-      <button type="button" id="searchToggle" aria-label="Search dishes" aria-expanded="false" aria-controls="searchBar">
+      <button type="button" id="searchToggle" aria-label="Search dishes" aria-expanded="false" aria-controls="searchOverlay">
         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
       </button>
       <button type="button" id="favToggle" aria-label="Show favourite dishes" aria-expanded="false">
@@ -53,12 +67,6 @@
     </div>
   </nav>
 
-  <div class="search-bar" id="searchBar" hidden>
-    <label class="sr-only" for="searchInput">Search dishes</label>
-    <input type="search" id="searchInput" placeholder="Search dishes… try &quot;pizza&quot;" autocomplete="off" />
-    <button type="button" id="searchClose" aria-label="Close search"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
-  </div>
-
   <aside class="cart-panel" id="cartPanel" hidden aria-label="Your cart">
     <div class="cart-head">
       <h2>Your Cart</h2>
@@ -67,11 +75,35 @@
     <p class="cart-empty" id="cartEmpty">Your cart is empty. Add something tasty from the menu.</p>
     <ul class="cart-items" id="cartItems"></ul>
     <div class="cart-foot" id="cartFoot" hidden>
-      <p class="cart-total">Total <strong id="cartTotal">₹0</strong></p>
+      <div class="promo-row">
+        <label class="sr-only" for="promoInput">Promo code</label>
+        <input id="promoInput" type="text" placeholder="Promo code (try FOODIE50)" autocomplete="off" />
+        <button type="button" id="promoApply" class="btn-dark">Apply</button>
+      </div>
+      <p class="promo-msg" id="promoMsg" hidden></p>
+      <dl class="price-rows">
+        <div><dt>Subtotal</dt><dd id="priceSubtotal">₹0</dd></div>
+        <div id="discountRow" hidden><dt>Discount (FOODIE50)</dt><dd id="priceDiscount">−₹0</dd></div>
+        <div><dt>Delivery</dt><dd id="priceDelivery">₹30</dd></div>
+        <div class="grand"><dt>Total</dt><dd id="cartTotal">₹0</dd></div>
+      </dl>
+      <p class="free-del-note" id="freeDelNote"></p>
       <button type="button" class="btn-primary" id="checkoutBtn">Checkout</button>
     </div>
   </aside>
 </header>
+
+<!-- Sticky search: stays fixed under the header while you type -->
+<div class="search-overlay" id="searchOverlay" hidden>
+  <div class="search-box">
+    <i class="fa-solid fa-magnifying-glass search-ico" aria-hidden="true"></i>
+    <label class="sr-only" for="searchInput">Search dishes</label>
+    <input type="search" id="searchInput" placeholder="Search dishes… try &quot;pizza&quot; or &quot;sweet&quot;" autocomplete="off" />
+    <button type="button" id="searchClose" aria-label="Close search"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+  </div>
+  <p class="search-hint" id="searchHint">Popular right now: Pizza · Biryani · Burger</p>
+  <ul class="suggestions" id="suggestions"></ul>
+</div>
 
 <main>
 
@@ -79,11 +111,18 @@
   <section class="hero" id="Home">
     <div class="hero-text">
       <h1>Get Fresh <span>Food</span><br />in an Easy Way</h1>
+      <ul class="info-strip" aria-label="Restaurant information">
+        <li><i class="fa-solid fa-star" aria-hidden="true"></i> 4.5 rating</li>
+        <li><i class="fa-solid fa-clock" aria-hidden="true"></i> 30–40 min delivery</li>
+        <li><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Free delivery over ₹499</li>
+        <li class="open-badge" id="openBadge"><span class="dot"></span> Open now · till 11 PM</li>
+      </ul>
       <p>
         Hot, fresh and made to order — Foodie brings your favourite burgers, pizzas,
         biryani and more straight to your door in New Delhi. Pick a dish, add it to
         your cart, and your order is placed in under a minute.
       </p>
+      <p class="offer-banner"><i class="fa-solid fa-tag" aria-hidden="true"></i> 50% OFF up to ₹100 on orders above ₹299 — code <strong>FOODIE50</strong></p>
       <a href="#Menu" class="btn-primary hero-btn">Order Now <i class="fa-solid fa-angle-right" aria-hidden="true"></i></a>
     </div>
     <div class="hero-image">
@@ -105,6 +144,11 @@
         order so it reaches you hot. Fair prices, honest portions and delivery
         that respects your time: that is the whole idea.
       </p>
+      <ul class="about-points">
+        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Open daily, 11:00 AM – 11:00 PM</li>
+        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Delivery across New Delhi in 30–40 minutes</li>
+        <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Pay with UPI or cash on delivery</li>
+      </ul>
       <a href="#Order" class="btn-primary">Order Now</a>
     </div>
   </section>
@@ -112,11 +156,22 @@
   <!-- Menu -->
   <section class="menu" id="Menu">
     <h2>Our <span>Menu</span></h2>
-    <p class="no-results" id="noResults" hidden>No dishes match your search. Try another name.</p>
+
+    <div class="chips" role="group" aria-label="Filter menu by category">
+      <button type="button" class="chip active" data-cat="All">All</button>
+      <button type="button" class="chip" data-cat="Fast Food">Fast Food</button>
+      <button type="button" class="chip" data-cat="Italian">Italian</button>
+      <button type="button" class="chip" data-cat="Indian">Indian</button>
+      <button type="button" class="chip" data-cat="Drinks">Drinks</button>
+      <button type="button" class="chip" data-cat="Desserts">Desserts</button>
+    </div>
+
+    <p class="no-results" id="noResults" hidden>No dishes match. Try another name or category.</p>
     <div class="menu-grid">
 
-      <article class="menu-card" data-name="Burger" data-price="40">
+      <article class="menu-card" data-name="Burger" data-price="40" data-category="Fast Food" data-keywords="burger bun snack fast food cheese patty veg">
         <div class="menu-image"><img src="image/buger.jpg" alt="Burger" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Burger to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Burger</h3>
@@ -127,8 +182,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Pasta" data-price="250">
+      <article class="menu-card" data-name="Pasta" data-price="250" data-category="Italian" data-keywords="pasta italian creamy white sauce noodles veg">
         <div class="menu-image"><img src="image/pasta.jpg" alt="Pasta" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Pasta to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Pasta</h3>
@@ -139,8 +195,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Lasagna" data-price="200">
+      <article class="menu-card" data-name="Lasagna" data-price="200" data-category="Italian" data-keywords="lasagna italian cheese baked pasta veg">
         <div class="menu-image"><img src="image/lasagna.webp" alt="Lasagna" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Lasagna to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Lasagna</h3>
@@ -151,8 +208,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Chocolate Drink" data-price="60">
+      <article class="menu-card" data-name="Chocolate Drink" data-price="60" data-category="Drinks" data-keywords="chocolate drink shake cold beverage sweet cocoa">
         <div class="menu-image"><img src="image/chocolate_Drink.jpg" alt="Chocolate drink" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Chocolate Drink to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Chocolate Drink</h3>
@@ -163,8 +221,10 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Pizza" data-price="120">
+      <article class="menu-card" data-name="Pizza" data-price="120" data-category="Italian" data-keywords="pizza cheese italian fast food veg" data-tag="Bestseller">
         <div class="menu-image"><img src="image/pizza.jpg" alt="Pizza" loading="lazy" /></div>
+        <span class="dish-tag">Bestseller</span>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Pizza to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Pizza</h3>
@@ -175,8 +235,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Hot Dog" data-price="20">
+      <article class="menu-card" data-name="Hot Dog" data-price="20" data-category="Fast Food" data-keywords="hot dog sausage snack fast food non veg">
         <div class="menu-image"><img src="image/Hot_dog.jpg" alt="Hot dog" loading="lazy" /></div>
+        <span class="veg-badge nonveg" title="Non-vegetarian" aria-label="Non-vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Hot Dog to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Hot Dog</h3>
@@ -187,8 +248,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Juice" data-price="50">
+      <article class="menu-card" data-name="Juice" data-price="50" data-category="Drinks" data-keywords="juice fresh fruit drink beverage healthy">
         <div class="menu-image"><img src="image/juse.jpg" alt="Fresh juice" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Juice to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Juice</h3>
@@ -199,8 +261,10 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Biryani" data-price="180">
+      <article class="menu-card" data-name="Biryani" data-price="180" data-category="Indian" data-keywords="biryani rice indian spicy hyderabadi veg" data-tag="Bestseller">
         <div class="menu-image"><img src="image/biryani.webp" alt="Biryani" loading="lazy" /></div>
+        <span class="dish-tag">Bestseller</span>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Biryani to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Biryani</h3>
@@ -211,8 +275,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Chocolate" data-price="30">
+      <article class="menu-card" data-name="Chocolate" data-price="30" data-category="Desserts" data-keywords="chocolate sweet dessert cocoa">
         <div class="menu-image"><img src="image/chocolate.jpg" alt="Chocolate" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Chocolate to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Chocolate</h3>
@@ -223,8 +288,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Ice Cream" data-price="10">
+      <article class="menu-card" data-name="Ice Cream" data-price="10" data-category="Desserts" data-keywords="ice cream dessert sweet cold scoop">
         <div class="menu-image"><img src="image/ice_cream.jpg" alt="Ice cream" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Ice Cream to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Ice Cream</h3>
@@ -235,8 +301,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Spanchi" data-price="60">
+      <article class="menu-card" data-name="Spanchi" data-price="60" data-category="Indian" data-keywords="spanchi house special indian veg">
         <div class="menu-image"><img src="image/Spanchi.jpg" alt="Spanchi" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Spanchi to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Spanchi</h3>
@@ -247,8 +314,9 @@
         </div>
       </article>
 
-      <article class="menu-card" data-name="Sandwich" data-price="25">
+      <article class="menu-card" data-name="Sandwich" data-price="25" data-category="Fast Food" data-keywords="sandwich grilled snack breakfast veg">
         <div class="menu-image"><img src="image/sandwich.jpg" alt="Sandwich" loading="lazy" /></div>
+        <span class="veg-badge veg" title="Vegetarian" aria-label="Vegetarian"><span></span></span>
         <button type="button" class="fav-btn" aria-label="Save Sandwich to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
         <div class="menu-info">
           <h3>Sandwich</h3>
@@ -357,7 +425,16 @@
           <label for="fAddress">Address</label>
           <input id="fAddress" name="address" type="text" placeholder="Your full delivery address" autocomplete="street-address" required />
         </div>
-        <p class="order-total-line">Estimated total: <strong id="orderTotal">—</strong></p>
+        <div class="field field-wide">
+          <label for="fNote">Delivery Note <span class="optional">(optional)</span></label>
+          <input id="fNote" name="note" type="text" placeholder="e.g. Ring the bell, leave at the door" />
+        </div>
+        <fieldset class="field field-wide pay-group">
+          <legend>Payment</legend>
+          <label class="pay-option"><input type="radio" name="payment" value="Cash on Delivery" checked /> <span>Cash on Delivery</span></label>
+          <label class="pay-option"><input type="radio" name="payment" value="UPI" /> <span>UPI</span></label>
+        </fieldset>
+        <p class="order-total-line">Estimated total (incl. delivery): <strong id="orderTotal">—</strong></p>
         <button type="submit" class="btn-primary order-submit">Place Order</button>
         <p class="form-note">Front-end demo checkout — your order is confirmed on this page, no payment is taken.</p>
       </form>
@@ -367,6 +444,12 @@
       <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
       <h3>Order placed!</h3>
       <p id="orderSuccessText"></p>
+      <ol class="status-steps" aria-label="Order status">
+        <li class="done">Order received</li>
+        <li class="current">Preparing</li>
+        <li>On the way</li>
+        <li>Delivered</li>
+      </ol>
       <button type="button" class="btn-dark" id="orderAgain">Order More</button>
     </div>
   </section>
@@ -378,6 +461,7 @@
     <div class="footer-tag">
       <h2>Location</h2>
       <p>New Delhi, India</p>
+      <p>Delivery: all of New Delhi</p>
     </div>
     <div class="footer-tag">
       <h2>Quick Links</h2>
@@ -395,10 +479,10 @@
       <p>New Delhi, India</p>
     </div>
     <div class="footer-tag">
-      <h2>Our Service</h2>
-      <p>Fast Delivery</p>
-      <p>Easy Payments</p>
-      <p>24 × 7 Service</p>
+      <h2>Opening Hours</h2>
+      <p>Mon – Sun</p>
+      <p>11:00 AM – 11:00 PM</p>
+      <p>Delivery in 30–40 min</p>
     </div>
     <div class="footer-tag">
       <h2>Follow</h2>
