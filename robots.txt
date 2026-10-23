@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://randhirsingh77.github.io/Food-Delivery/sitemap.xml
