@@ -16,6 +16,7 @@ section { scroll-margin-top: calc(var(--header-h) + 12px); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 :focus-visible { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
+[hidden] { display: none !important; }
 
 .btn-primary {
   display: inline-block; background: var(--accent); color: #ffffff; border: none;
