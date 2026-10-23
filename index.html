@@ -1,629 +1,419 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Website</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Foodie — Fresh Food Delivery in New Delhi</title>
+<meta name="description" content="Foodie delivers fresh, hot food in New Delhi — burgers, pizza, biryani, pasta and more. Browse the menu, add your favourites to the cart and order in under a minute." />
+<meta name="theme-color" content="#fac031" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Foodie — Fresh Food Delivery in New Delhi" />
+<meta property="og:description" content="Fresh, hot food delivered fast. Burgers, pizza, biryani, pasta and more." />
+<meta property="og:url" content="https://randhirsingh77.github.io/Food-Delivery/" />
+<meta property="og:image" content="https://randhirsingh77.github.io/Food-Delivery/image/main_img.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="image/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 
-    <section id="Home">
-        <nav>
-            <div class="logo">
-                <img src="image\foodie logo1.jpg">
-            </div>
+<header class="site-header">
+  <nav class="nav" aria-label="Main">
+    <a class="logo" href="#Home" aria-label="Foodie — home">
+      <img src="image/foodie-logo.jpg" alt="Foodie logo" width="100" height="40" />
+    </a>
 
-            <ul>
-                <li><a href="#Home">Home</a></li>
-                <li><a href="#About">About</a></li>
-                <li><a href="#Menu">Menu</a></li>
-                <li><a href="#Gallary">Gallary</a></li>
-                
-                <li><a href="#Order">Order</a></li>
-            </ul>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#Home">Home</a></li>
+      <li><a href="#About">About</a></li>
+      <li><a href="#Menu">Menu</a></li>
+      <li><a href="#Gallery">Gallery</a></li>
+      <li><a href="#Order">Order</a></li>
+    </ul>
 
-            <div class="icon">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <i class="fa-solid fa-heart"></i>
-                <i class="fa-solid fa-cart-shopping"></i>
-            </div>
+    <div class="nav-icons">
+      <button type="button" id="searchToggle" aria-label="Search dishes" aria-expanded="false" aria-controls="searchBar">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="favToggle" aria-label="Show favourite dishes" aria-expanded="false">
+        <i class="fa-solid fa-heart" aria-hidden="true"></i>
+        <span class="badge" id="favCount" hidden>0</span>
+      </button>
+      <button type="button" id="cartToggle" aria-label="Open cart" aria-expanded="false" aria-controls="cartPanel">
+        <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+        <span class="badge" id="cartCount" hidden>0</span>
+      </button>
+      <button type="button" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+    </div>
+  </nav>
 
-        </nav>
+  <div class="search-bar" id="searchBar" hidden>
+    <label class="sr-only" for="searchInput">Search dishes</label>
+    <input type="search" id="searchInput" placeholder="Search dishes… try &quot;pizza&quot;" autocomplete="off" />
+    <button type="button" id="searchClose" aria-label="Close search"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+  </div>
 
-        <div class="main">
+  <aside class="cart-panel" id="cartPanel" hidden aria-label="Your cart">
+    <div class="cart-head">
+      <h2>Your Cart</h2>
+      <button type="button" id="cartClose" aria-label="Close cart"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <p class="cart-empty" id="cartEmpty">Your cart is empty. Add something tasty from the menu.</p>
+    <ul class="cart-items" id="cartItems"></ul>
+    <div class="cart-foot" id="cartFoot" hidden>
+      <p class="cart-total">Total <strong id="cartTotal">₹0</strong></p>
+      <button type="button" class="btn-primary" id="checkoutBtn">Checkout</button>
+    </div>
+  </aside>
+</header>
 
-            <div class="men_text">
-                <h1>Get Fresh<span>Food</span><br>in a Easy Way</h1>
-            </div>
+<main>
 
-            <div class="main_image">
-                <img src="image/main_img.png">
-            </div>
+  <!-- Home -->
+  <section class="hero" id="Home">
+    <div class="hero-text">
+      <h1>Get Fresh <span>Food</span><br />in an Easy Way</h1>
+      <p>
+        Hot, fresh and made to order — Foodie brings your favourite burgers, pizzas,
+        biryani and more straight to your door in New Delhi. Pick a dish, add it to
+        your cart, and your order is placed in under a minute.
+      </p>
+      <a href="#Menu" class="btn-primary hero-btn">Order Now <i class="fa-solid fa-angle-right" aria-hidden="true"></i></a>
+    </div>
+    <div class="hero-image">
+      <img src="image/main_img.png" alt="A burger with fries and a drink" fetchpriority="high" />
+    </div>
+  </section>
 
+  <!-- About -->
+  <section class="about" id="About">
+    <div class="about-image">
+      <img src="image/Food-Plate.png" alt="A plated dish of grilled food with vegetables" loading="lazy" />
+    </div>
+    <div class="about-text">
+      <h2><span>About</span> Us</h2>
+      <h3>Why choose us?</h3>
+      <p>
+        Every dish at Foodie is cooked fresh when you order — no frozen shortcuts.
+        We use quality ingredients, keep our kitchen hygiene-first, and pack every
+        order so it reaches you hot. Fair prices, honest portions and delivery
+        that respects your time: that is the whole idea.
+      </p>
+      <a href="#Order" class="btn-primary">Order Now</a>
+    </div>
+  </section>
+
+  <!-- Menu -->
+  <section class="menu" id="Menu">
+    <h2>Our <span>Menu</span></h2>
+    <p class="no-results" id="noResults" hidden>No dishes match your search. Try another name.</p>
+    <div class="menu-grid">
+
+      <article class="menu-card" data-name="Burger" data-price="40">
+        <div class="menu-image"><img src="image/buger.jpg" alt="Burger" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Burger to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Burger</h3>
+          <p>Crispy patty, fresh veggies and house sauce in a toasted bun.</p>
+          <p class="price">₹40.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
         </div>
+      </article>
 
-        <p>
-            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Esse reiciendis quaerat nobis 
-            deleniti amet non inventore. Reprehenderit recusandae voluptatibus minus tenetur itaque numquam 
-            cum quos dolorem maxime. Quas, quaerat nisi. Lorem ipsum dolor sit, amet consectetur adipisicing 
-            elit. Cumque facilis, quaerat cupiditate nulla quibusdam quo sunt esse tempore inventore vel 
-            voluptate, amet laudantium adipisci veniam nihil quam molestiae omnis mollitia.
-        </p>
-
-        <div class="main_btn">
-            <a href="#">Order Now</a>
-            <i class="fa-solid fa-angle-right"></i>
+      <article class="menu-card" data-name="Pasta" data-price="250">
+        <div class="menu-image"><img src="image/pasta.jpg" alt="Pasta" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Pasta to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Pasta</h3>
+          <p>Creamy white-sauce pasta with herbs and a garlic-butter finish.</p>
+          <p class="price">₹250.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
         </div>
+      </article>
 
-    </section>
-
-
-
-    <!--About-->
-
-    <div class="about" id="About">
-        <div class="about_main">
-
-            <div class="image">
-                <img src="image/Food-Plate.png">
-            </div>
-
-            <div class="about_text">
-                <h1><span>About</span>Us</h1>
-                <h3>Why Choose us?</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Expedita, est. Doloremque 
-                    sapiente veritatis laboriosam corrupti optio et maxime. Ad, amet explicabo eaque labore 
-                    cupiditate quasi nostrum nemo recusandae id quibusdam? Lorem ipsum dolor sit amet 
-                    consectetur adipisicing elit. Doloremque ab, dolores pariatur cum exercitationem, illo nisi 
-                    veritatis vitae ea deleniti fugiat quisquam tempora, accusantium corrupti excepturi optio. 
-                    Inventore, cupiditate recusandae.
-                </p>
-            </div>
-
+      <article class="menu-card" data-name="Lasagna" data-price="200">
+        <div class="menu-image"><img src="image/lasagna.webp" alt="Lasagna" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Lasagna to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Lasagna</h3>
+          <p>Layered pasta sheets, rich tomato sauce and melted cheese, baked fresh.</p>
+          <p class="price">₹200.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
         </div>
+      </article>
 
-        <a href="#" class="about_btn">Order Now</a>
+      <article class="menu-card" data-name="Chocolate Drink" data-price="60">
+        <div class="menu-image"><img src="image/chocolate_Drink.jpg" alt="Chocolate drink" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Chocolate Drink to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Chocolate Drink</h3>
+          <p>Chilled chocolate shake topped with cocoa and cream.</p>
+          <p class="price">₹60.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Pizza" data-price="120">
+        <div class="menu-image"><img src="image/pizza.jpg" alt="Pizza" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Pizza to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Pizza</h3>
+          <p>Hand-tossed base, tangy tomato sauce and a loaded cheese topping.</p>
+          <p class="price">₹120.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Hot Dog" data-price="20">
+        <div class="menu-image"><img src="image/Hot_dog.jpg" alt="Hot dog" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Hot Dog to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Hot Dog</h3>
+          <p>Grilled sausage in a soft bun with mustard and crispy onions.</p>
+          <p class="price">₹20.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Juice" data-price="50">
+        <div class="menu-image"><img src="image/juse.jpg" alt="Fresh juice" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Juice to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Juice</h3>
+          <p>Fresh-pressed seasonal fruit juice, nothing added.</p>
+          <p class="price">₹50.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Biryani" data-price="180">
+        <div class="menu-image"><img src="image/biryani.webp" alt="Biryani" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Biryani to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Biryani</h3>
+          <p>Fragrant basmati layered with spiced vegetables and saffron.</p>
+          <p class="price">₹180.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Chocolate" data-price="30">
+        <div class="menu-image"><img src="image/chocolate.jpg" alt="Chocolate" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Chocolate to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Chocolate</h3>
+          <p>Rich and smooth — the perfect sweet finish to any meal.</p>
+          <p class="price">₹30.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Ice Cream" data-price="10">
+        <div class="menu-image"><img src="image/ice_cream.jpg" alt="Ice cream" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Ice Cream to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Ice Cream</h3>
+          <p>A classic creamy scoop, served perfectly chilled.</p>
+          <p class="price">₹10.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Spanchi" data-price="60">
+        <div class="menu-image"><img src="image/Spanchi.jpg" alt="Spanchi" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Spanchi to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Spanchi</h3>
+          <p>A house special, prepared fresh in our kitchen every day.</p>
+          <p class="price">₹60.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
+
+      <article class="menu-card" data-name="Sandwich" data-price="25">
+        <div class="menu-image"><img src="image/sandwich.jpg" alt="Sandwich" loading="lazy" /></div>
+        <button type="button" class="fav-btn" aria-label="Save Sandwich to favourites" aria-pressed="false"><i class="fa-solid fa-heart" aria-hidden="true"></i></button>
+        <div class="menu-info">
+          <h3>Sandwich</h3>
+          <p>Grilled triple-layer sandwich with mint chutney and crunchy veggies.</p>
+          <p class="price">₹25.00</p>
+          <p class="stars" aria-label="Rated 4.5 out of 5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></p>
+          <button type="button" class="btn-dark order-add">Order Now</button>
+        </div>
+      </article>
 
     </div>
+  </section>
 
+  <!-- Gallery -->
+  <section class="gallery" id="Gallery">
+    <h2>Our <span>Gallery</span></h2>
+    <div class="gallery-grid">
 
+      <figure class="gallery-item">
+        <img src="image/gallary_1.jpg" alt="Sandwich" loading="lazy" />
+        <figcaption>
+          <h3>Sandwich</h3>
+          <p>Grilled fresh, stacked high.</p>
+          <button type="button" class="btn-primary gallery-order" data-add="Sandwich">Order Now</button>
+        </figcaption>
+      </figure>
 
-    <!--Menu-->
+      <figure class="gallery-item">
+        <img src="image/gallary_2.jpg" alt="Cup cake" loading="lazy" />
+        <figcaption>
+          <h3>Cup Cake</h3>
+          <p>Soft, sweet and baked this morning.</p>
+          <button type="button" class="btn-primary gallery-order" data-order="Cup Cake">Order Now</button>
+        </figcaption>
+      </figure>
 
-    <div class="menu" id="Menu">
-        <h1>Our<span>Menu</span></h1>
+      <figure class="gallery-item">
+        <img src="image/gallary_3.jpg" alt="Chocolate cup cake" loading="lazy" />
+        <figcaption>
+          <h3>Chocolate Cup Cake</h3>
+          <p>For the serious chocolate lovers.</p>
+          <button type="button" class="btn-primary gallery-order" data-order="Chocolate Cup Cake">Order Now</button>
+        </figcaption>
+      </figure>
 
-        <div class="menu_box">
-            <div class="menu_card">
+      <figure class="gallery-item">
+        <img src="image/gallary_4.jpg" alt="Fresh bread" loading="lazy" />
+        <figcaption>
+          <h3>Bread</h3>
+          <p>Warm loaves, straight from the oven.</p>
+          <button type="button" class="btn-primary gallery-order" data-order="Bread">Order Now</button>
+        </figcaption>
+      </figure>
 
-                <div class="menu_image">
-                    <img src="image/buger.jpg">
-                </div>
+      <figure class="gallery-item">
+        <img src="image/gallary_5.jpg" alt="Pizza" loading="lazy" />
+        <figcaption>
+          <h3>Pizza</h3>
+          <p>Cheesy, loaded and wood-fired style.</p>
+          <button type="button" class="btn-primary gallery-order" data-add="Pizza">Order Now</button>
+        </figcaption>
+      </figure>
 
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Buger</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹40.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-            
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/pasta.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>pasta</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹250.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/lasagna.webp">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>lasagna</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹200.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/chocolate_Drink.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Drink</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹60.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/pizza.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>pizza</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹120.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/Hot_dog.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Hot Dog</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹20.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/juse.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Juse</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹50.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/biryani.webp">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Biryani</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹180.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/chocolate.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Chocolate</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹30.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/ice_cream.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Ice Cream</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹10.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/Spanchi.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Spanchi</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹60.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-
-            <div class="menu_card">
-
-                <div class="menu_image">
-                    <img src="image/sandwich.jpg">
-                </div>
-
-                <div class="small_card">
-                    <i class="fa-solid fa-heart"></i>
-                </div>
-
-                <div class="menu_info">
-                    <h2>Sandwich</h2>
-                    <p>
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Laborum assumenda voluptates
-                    </p>
-                    <h3>₹25.00</h3>
-                    <div class="menu_icon">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <a href="#" class="menu_btn">Order Now</a>
-                </div>
-
-            </div> 
-            
-        </div>
+      <figure class="gallery-item">
+        <img src="image/gallary_6.jpg" alt="Fruit cake" loading="lazy" />
+        <figcaption>
+          <h3>Fruit Cake</h3>
+          <p>Topped with fresh seasonal fruit.</p>
+          <button type="button" class="btn-primary gallery-order" data-order="Fruit Cake">Order Now</button>
+        </figcaption>
+      </figure>
 
     </div>
+  </section>
 
+  <!-- Order -->
+  <section class="order" id="Order">
+    <h2><span>Order</span> Now</h2>
+    <div class="order-main">
+      <div class="order-image">
+        <img src="image/order_image.png" alt="Delivery rider with a food order" loading="lazy" />
+      </div>
 
-
-
-    <!--Gallary-->
-
-    <div class="gallary" id="Gallary">
-        <h1>Our<span>Gallary</span></h1>
-
-        <div class="gallary_image_box">
-            <div class="gallary_image">
-                <img src="image/gallary_1.jpg">
-
-                <h3>Sandwitch</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi sint eveniet laboriosam 
-                </p>
-                <a href="#" class="gallary_btn">Order Now</a>
-            </div>
-
-            <div class="gallary_image">
-                <img src="image/gallary_2.jpg">
-
-                <h3>Cup cake</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi sint eveniet laboriosam 
-                </p>
-                <a href="#" class="gallary_btn">Order Now</a>
-            </div>
-
-            <div class="gallary_image">
-                <img src="image/gallary_3.jpg">
-
-                <h3>Brown Cup Cake</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi sint eveniet laboriosam 
-                </p>
-                <a href="#" class="gallary_btn">Order Now</a>
-            </div>
-
-            <div class="gallary_image">
-                <img src="image/gallary_4.jpg">
-
-                <h3>Bread</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi sint eveniet laboriosam 
-                </p>
-                <a href="#" class="gallary_btn">Order Now</a>
-            </div>
-
-            <div class="gallary_image">
-                <img src="image/gallary_5.jpg">
-
-                <h3>Pizaa</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi sint eveniet laboriosam 
-                </p>
-                <a href="#" class="gallary_btn">Order Now</a>
-            </div>
-
-            <div class="gallary_image">
-                <img src="image/gallary_6.jpg">
-
-                <h3>Fruit Cake</h3>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi sint eveniet laboriosam 
-                </p>
-                <a href="#" class="gallary_btn">Order Now</a>
-            </div>
-
+      <form id="orderForm" novalidate>
+        <div class="field">
+          <label for="fName">Name</label>
+          <input id="fName" name="name" type="text" placeholder="Your name" autocomplete="name" required />
         </div>
-
+        <div class="field">
+          <label for="fEmail">Email</label>
+          <input id="fEmail" name="email" type="email" placeholder="Your email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="fPhone">Phone Number</label>
+          <input id="fPhone" name="phone" type="tel" placeholder="Your phone number" autocomplete="tel" pattern="[0-9+ ()-]{10,15}" required />
+        </div>
+        <div class="field">
+          <label for="fQty">Quantity</label>
+          <input id="fQty" name="quantity" type="number" placeholder="How many" min="1" max="50" value="1" required />
+        </div>
+        <div class="field field-wide">
+          <label for="fItems">Your Order</label>
+          <input id="fItems" name="items" type="text" placeholder="Food name — or add dishes from the menu" required />
+        </div>
+        <div class="field field-wide">
+          <label for="fAddress">Address</label>
+          <input id="fAddress" name="address" type="text" placeholder="Your full delivery address" autocomplete="street-address" required />
+        </div>
+        <p class="order-total-line">Estimated total: <strong id="orderTotal">—</strong></p>
+        <button type="submit" class="btn-primary order-submit">Place Order</button>
+        <p class="form-note">Front-end demo checkout — your order is confirmed on this page, no payment is taken.</p>
+      </form>
     </div>
 
-
-
-
-    
-    <!--Order-->
-
-    <div class="order" id="Order">
-        <h1><span>Order</span>Now</h1>
-
-        <div class="order_main">
-
-            <div class="order_image">
-                <img src="image/order_image.png">
-            </div>
-
-            <form action="#">
-
-                <div class="input">
-                    <p>Name</p>
-                    <input type="text" placeholder="you name">
-                </div>
-
-                <div class="input">
-                    <p>Email</p>
-                    <input type="email" placeholder="you email">
-                </div>
-
-                <div class="input">
-                    <p>Number</p>
-                    <input placeholder="you number">
-                </div>
-
-                <div class="input">
-                    <p>How Much</p>
-                    <input type="number" placeholder="how many order">
-                </div>
-
-                <div class="input">
-                    <p>You Order</p>
-                    <input placeholder="food name">
-                </div>
-
-                <div class="input">
-                    <p>Address</p>
-                    <input placeholder="you Address">
-                </div>
-
-                <a href="#" class="order_btn">Order Now</a>
-
-            </form>
-
-        </div>
-
+    <div class="order-success" id="orderSuccess" hidden role="status">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+      <h3>Order placed!</h3>
+      <p id="orderSuccessText"></p>
+      <button type="button" class="btn-dark" id="orderAgain">Order More</button>
     </div>
+  </section>
 
+</main>
 
+<footer>
+  <div class="footer-main">
+    <div class="footer-tag">
+      <h2>Location</h2>
+      <p>New Delhi, India</p>
+    </div>
+    <div class="footer-tag">
+      <h2>Quick Links</h2>
+      <ul>
+        <li><a href="#Home">Home</a></li>
+        <li><a href="#About">About</a></li>
+        <li><a href="#Menu">Menu</a></li>
+        <li><a href="#Gallery">Gallery</a></li>
+        <li><a href="#Order">Order</a></li>
+      </ul>
+    </div>
+    <div class="footer-tag">
+      <h2>Contact</h2>
+      <p><a href="mailto:rs6201849307@gmail.com">rs6201849307@gmail.com</a></p>
+      <p>New Delhi, India</p>
+    </div>
+    <div class="footer-tag">
+      <h2>Our Service</h2>
+      <p>Fast Delivery</p>
+      <p>Easy Payments</p>
+      <p>24 × 7 Service</p>
+    </div>
+    <div class="footer-tag">
+      <h2>Follow</h2>
+      <p class="socials">
+        <a href="https://github.com/randhirsingh77" target="_blank" rel="noopener" aria-label="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        <a href="https://randhirsingh77.github.io/portfolio/" target="_blank" rel="noopener" aria-label="Portfolio"><i class="fa-solid fa-globe" aria-hidden="true"></i></a>
+        <a href="mailto:rs6201849307@gmail.com" aria-label="Email"><i class="fa-solid fa-envelope" aria-hidden="true"></i></a>
+      </p>
+    </div>
+  </div>
+  <p class="end">© <span id="year">2026</span> Foodie · Design by <span>Randhir Singh</span></p>
+</footer>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-
-    <!--Footer-->
-
-    <footer>
-        <div class="footer_main">
-
-            <div class="footer_tag">
-                <h2>Location</h2>
-                <p>Sri Lanka</p>
-                <p>USA</p>
-                <p>India</p>
-                <p>Japan</p>
-                <p>Italy</p>
-            </div>
-
-            <div class="footer_tag">
-                <h2>Quick Link</h2>
-                <li><a href="#Home">Home</a></li>
-                <li><a href="#About">About</a></li>
-                <li><a href="#Menu">Menu</a></li>
-                <li><a href="#Gallary">Gallary</a></li>
-
-            </div>
-
-            <div class="footer_tag">
-                <h2>Contact</h2>
-                <p>+91 123456789</p>
-                <p>+91 987654321</p>
-                <p>foodie123@gmail.com</p>
-                <p>foodshop123@gmail.com</p>
-            </div>
-
-            <div class="footer_tag">
-                <h2>Our Service</h2>
-                <p>Fast Delivery</p>
-                <p>Easy Payments</p>
-                <p>24 x 7 Service</p>
-            </div>
-
-            <div class="footer_tag">
-                <h2>Follows</h2>
-                <i class="fa-brands fa-facebook-f"></i>
-                <i class="fa-brands fa-twitter"></i>
-                <i class="fa-brands fa-instagram"></i>
-                <i class="fa-brands fa-linkedin-in"></i>
-            </div>
-
-        </div>
-
-        <p class="end">Design by<span><i class="fa-solid fa-face-grin"></i> Randhir Singh </span></p>
-
-    </footer>
-
-
-
-    
+<script src="script.js"></script>
 </body>
 </html>
