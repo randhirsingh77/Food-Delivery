@@ -9,22 +9,11 @@
   const DELIVERY_FEE = 30;
   const PROMO = { code: "FOODIE50", minOrder: 299, pct: 50, cap: 100 };
 
-  /* ---------- Keep --header-h equal to the REAL header height ----------
-     The fixed header can grow taller than the CSS estimate (on narrow
-     phones the nav wraps to two rows; the open mobile menu adds a row).
-     The search overlay, hero spacing and anchor scroll margins all read
-     --header-h, so measure the header and sync the variable — then the
-     overlay always starts exactly below the bar, never behind it. */
+  /* The header element, used to anchor the search overlay to the header's
+     real bottom edge (see positionSearchOverlay in the search section).
+     Nothing ever writes the header's height back into CSS, so the header
+     can never feed its own growth. */
   const headerEl = $(".site-header");
-  function syncHeaderH() {
-    if (headerEl) {
-      document.documentElement.style.setProperty("--header-h", headerEl.offsetHeight + "px");
-    }
-  }
-  syncHeaderH();
-  if (window.ResizeObserver && headerEl) new ResizeObserver(syncHeaderH).observe(headerEl);
-  window.addEventListener("resize", syncHeaderH);
-  window.addEventListener("load", syncHeaderH);
 
   /* ---------- Dish catalog from the menu cards ---------- */
   const catalog = new Map(); // name -> {name, price, category, keywords, img, card}
@@ -318,7 +307,15 @@
     if (addBtn) addToCart(addBtn.dataset.add);
   });
 
+  function positionSearchOverlay() {
+    // Anchor the overlay to the header's actual bottom edge, measured at
+    // this moment — correct whether the header is one row or two, and
+    // whether the mobile menu is open or closed.
+    if (headerEl) overlay.style.top = headerEl.getBoundingClientRect().bottom + "px";
+  }
+
   function openSearch() {
+    positionSearchOverlay();
     overlay.hidden = false;
     searchToggle.setAttribute("aria-expanded", "true");
     renderSuggestions();
@@ -329,6 +326,7 @@
     searchToggle.setAttribute("aria-expanded", "false");
   }
   searchToggle.addEventListener("click", () => (overlay.hidden ? openSearch() : closeSearch()));
+  window.addEventListener("resize", () => { if (!overlay.hidden) positionSearchOverlay(); });
   $("#searchClose").addEventListener("click", () => {
     searchInput.value = ""; state.query = ""; applyFilters(); closeSearch();
   });
