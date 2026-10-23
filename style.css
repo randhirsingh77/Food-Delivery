@@ -350,3 +350,29 @@ footer .end span { color: var(--accent-dark); font-weight: 600; }
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---------- Account (Auth0) ---------- */
+#authBtn .acc-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+#authBtn .acc-initial {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #000;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700;
+}
+.account-panel { right: 4.5rem; }
+.acc-head h2 { font-size: 1.25rem; text-align: left; margin-bottom: 0.5rem; }
+.acc-note { color: var(--muted); font-size: 0.9rem; line-height: 1.55; margin: 0.5rem 0; }
+.acc-block { width: 100%; margin-top: 0.55rem; text-align: center; }
+.acc-google {
+  width: 100%; margin-top: 0.55rem; padding: 11px 20px; background: #ffffff; color: #222;
+  border: 2px solid #dddddd; border-radius: 4px; font-size: 0.98rem; font-weight: 500; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+}
+.acc-google:hover { border-color: var(--accent); }
+.acc-user { display: flex; gap: 0.8rem; align-items: center; margin: 0.4rem 0 0.6rem; }
+.acc-avatar-lg { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+.acc-initial-lg {
+  width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #000; flex: none;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700;
+}
+.acc-name { font-weight: 600; }
+.acc-mail { color: var(--muted); font-size: 0.88rem; }
+@media (max-width: 560px) { .account-panel { right: 0.8rem; } }
