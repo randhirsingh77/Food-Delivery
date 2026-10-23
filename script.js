@@ -1,14 +1,26 @@
-// Foodie — cart, favourites, search, mobile nav and order flow.
+// Foodie — smart search, cart with offers, favourites, categories and order flow.
 (function () {
   "use strict";
   const $ = (s, c) => (c || document).querySelector(s);
   const $$ = (s, c) => Array.from((c || document).querySelectorAll(s));
   const inr = (n) => "₹" + n.toLocaleString("en-IN");
 
-  /* ---------- Dish data from the menu cards ---------- */
-  const dishes = new Map(); // name -> price
+  const FREE_DELIVERY_ABOVE = 499;
+  const DELIVERY_FEE = 30;
+  const PROMO = { code: "FOODIE50", minOrder: 299, pct: 50, cap: 100 };
+
+  /* ---------- Dish catalog from the menu cards ---------- */
+  const catalog = new Map(); // name -> {name, price, category, keywords, img, card}
   $$(".menu-card").forEach((card) => {
-    dishes.set(card.dataset.name, Number(card.dataset.price));
+    catalog.set(card.dataset.name, {
+      name: card.dataset.name,
+      price: Number(card.dataset.price),
+      category: card.dataset.category || "",
+      keywords: (card.dataset.keywords || "").toLowerCase(),
+      tag: card.dataset.tag || "",
+      img: $("img", card) ? $("img", card).getAttribute("src") : "",
+      card,
+    });
   });
 
   /* ---------- Toast ---------- */
@@ -25,27 +37,30 @@
     }, 2400);
   }
 
-  /* ---------- Cart ---------- */
-  const cart = new Map(); // name -> {name, price, qty}
-  try {
-    const saved = JSON.parse(localStorage.getItem("foodie-cart") || "[]");
-    saved.forEach(([name, item]) => {
-      if (dishes.has(name)) cart.set(name, item);
-    });
-  } catch (e) { /* storage unavailable — cart just won't persist */ }
+  /* ---------- Pricing ---------- */
+  let promoApplied = false;
+  try { promoApplied = localStorage.getItem("foodie-promo") === PROMO.code; } catch (e) {}
+  function breakdown(subtotal) {
+    const discount = promoApplied && subtotal >= PROMO.minOrder
+      ? Math.min(PROMO.cap, Math.round(subtotal * PROMO.pct / 100)) : 0;
+    const delivery = subtotal === 0 || (subtotal - discount) >= FREE_DELIVERY_ABOVE ? 0 : DELIVERY_FEE;
+    return { subtotal, discount, delivery, total: subtotal - discount + delivery };
+  }
 
-  const cartCount = $("#cartCount"), cartItems = $("#cartItems"),
-        cartEmpty = $("#cartEmpty"), cartFoot = $("#cartFoot"), cartTotal = $("#cartTotal");
+  /* ---------- Cart ---------- */
+  const cart = new Map();
+  try {
+    (JSON.parse(localStorage.getItem("foodie-cart") || "[]")).forEach(([name, item]) => {
+      if (catalog.has(name)) cart.set(name, item);
+    });
+  } catch (e) {}
+  const cartCount = $("#cartCount"), cartItems = $("#cartItems"), cartEmpty = $("#cartEmpty"),
+        cartFoot = $("#cartFoot"), cartTotalEl = $("#cartTotal");
 
   function cartQty() { let n = 0; cart.forEach((i) => (n += i.qty)); return n; }
-  function cartSum() { let n = 0; cart.forEach((i) => (n += i.qty * i.price)); return n; }
-  function cartSummary() {
-    return Array.from(cart.values()).map((i) => `${i.name} × ${i.qty}`).join(", ");
-  }
-
-  function saveCart() {
-    try { localStorage.setItem("foodie-cart", JSON.stringify(Array.from(cart.entries()))); } catch (e) {}
-  }
+  function cartSubtotal() { let n = 0; cart.forEach((i) => (n += i.qty * i.price)); return n; }
+  function cartSummary() { return Array.from(cart.values()).map((i) => `${i.name} × ${i.qty}`).join(", "); }
+  function saveCart() { try { localStorage.setItem("foodie-cart", JSON.stringify(Array.from(cart.entries()))); } catch (e) {} }
 
   function renderCart() {
     const n = cartQty();
@@ -66,7 +81,16 @@
         `<span class="ci-price">${inr(item.price * item.qty)}</span>`;
       cartItems.appendChild(li);
     });
-    cartTotal.textContent = inr(cartSum());
+    const b = breakdown(cartSubtotal());
+    $("#priceSubtotal").textContent = inr(b.subtotal);
+    $("#discountRow").hidden = b.discount === 0;
+    $("#priceDiscount").textContent = "−" + inr(b.discount);
+    $("#priceDelivery").textContent = b.delivery === 0 ? "FREE" : inr(b.delivery);
+    cartTotalEl.textContent = inr(b.total);
+    $("#freeDelNote").textContent = b.delivery > 0
+      ? `Add ${inr(FREE_DELIVERY_ABOVE - (b.subtotal - b.discount))} more for FREE delivery`
+      : "You have got FREE delivery on this order";
+    $("#checkoutBtn").textContent = `Checkout · ${inr(b.total)}`;
     saveCart();
     syncOrderForm();
   }
@@ -76,25 +100,45 @@
     if (!btn) return;
     const item = cart.get(btn.dataset.name);
     if (!item) return;
-    if (btn.dataset.act === "inc") item.qty += 1;
-    else item.qty -= 1;
+    item.qty += btn.dataset.act === "inc" ? 1 : -1;
     if (item.qty <= 0) cart.delete(item.name);
     renderCart();
   });
 
   function addToCart(name) {
-    const price = dishes.get(name);
-    if (price === undefined) return;
-    const item = cart.get(name) || { name, price, qty: 0 };
+    const dish = catalog.get(name);
+    if (!dish) return;
+    const item = cart.get(name) || { name, price: dish.price, qty: 0 };
     item.qty += 1;
     cart.set(name, item);
     renderCart();
-    showToast(`Added ${name} (${inr(price)}) to your cart`);
+    showToast(`Added ${name} (${inr(dish.price)}) to your cart`);
   }
+  $$(".order-add").forEach((btn) =>
+    btn.addEventListener("click", () => addToCart(btn.closest(".menu-card").dataset.name)));
 
-  $$(".order-add").forEach((btn) => {
-    btn.addEventListener("click", () => addToCart(btn.closest(".menu-card").dataset.name));
+  /* ---------- Promo code ---------- */
+  const promoInput = $("#promoInput"), promoMsg = $("#promoMsg");
+  function setPromoMsg(text, ok) {
+    promoMsg.hidden = !text;
+    promoMsg.textContent = text || "";
+    promoMsg.className = "promo-msg " + (ok ? "ok" : "err");
+  }
+  $("#promoApply").addEventListener("click", () => {
+    const code = promoInput.value.trim().toUpperCase();
+    if (!code) { setPromoMsg("Enter a promo code first", false); return; }
+    if (code !== PROMO.code) { promoApplied = false; setPromoMsg("That code is not valid. Try FOODIE50.", false); }
+    else if (cartSubtotal() < PROMO.minOrder) {
+      promoApplied = false;
+      setPromoMsg(`FOODIE50 needs a subtotal of ${inr(PROMO.minOrder)} or more`, false);
+    } else {
+      promoApplied = true;
+      setPromoMsg("FOODIE50 applied — 50% off up to ₹100", true);
+    }
+    try { localStorage.setItem("foodie-promo", promoApplied ? PROMO.code : ""); } catch (e) {}
+    renderCart();
   });
+  if (promoApplied) { promoInput.value = PROMO.code; }
 
   /* ---------- Cart panel ---------- */
   const cartPanel = $("#cartPanel"), cartToggle = $("#cartToggle");
@@ -107,7 +151,6 @@
   document.addEventListener("click", (e) => {
     if (!cartPanel.hidden && !cartPanel.contains(e.target) && !cartToggle.contains(e.target)) setCartOpen(false);
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") setCartOpen(false); });
   $("#checkoutBtn").addEventListener("click", () => {
     setCartOpen(false);
     syncOrderForm();
@@ -115,23 +158,44 @@
     showToast("Review your details and place the order");
   });
 
+  /* ---------- Unified menu filters (search + category + favourites) ---------- */
+  const state = { query: "", category: "All", favOnly: false };
+  function applyFilters() {
+    let visible = 0;
+    catalog.forEach((dish) => {
+      const q = state.query;
+      const matchQ = !q || dish.name.toLowerCase().includes(q) || dish.keywords.includes(q) || dish.category.toLowerCase().includes(q);
+      const matchC = state.category === "All" || dish.category === state.category;
+      const matchF = !state.favOnly || favs.has(dish.name);
+      const show = matchQ && matchC && matchF;
+      dish.card.style.display = show ? "" : "none";
+      if (show) visible += 1;
+    });
+    $("#noResults").hidden = visible !== 0;
+  }
+  $$(".chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      $$(".chip").forEach((c) => c.classList.toggle("active", c === chip));
+      state.category = chip.dataset.cat;
+      applyFilters();
+    });
+  });
+
   /* ---------- Favourites ---------- */
   const favs = new Set();
-  try { (JSON.parse(localStorage.getItem("foodie-favs") || "[]")).forEach((n) => dishes.has(n) && favs.add(n)); } catch (e) {}
-  const favCount = $("#favCount");
+  try { (JSON.parse(localStorage.getItem("foodie-favs") || "[]")).forEach((n) => catalog.has(n) && favs.add(n)); } catch (e) {}
+  const favCount = $("#favCount"), favToggle = $("#favToggle");
   function renderFavs() {
     favCount.hidden = favs.size === 0;
     favCount.textContent = favs.size;
-    $$(".menu-card").forEach((card) => {
-      const on = favs.has(card.dataset.name);
-      const btn = $(".fav-btn", card);
+    catalog.forEach((dish) => {
+      const btn = $(".fav-btn", dish.card);
+      const on = favs.has(dish.name);
       btn.classList.toggle("active", on);
       btn.setAttribute("aria-pressed", String(on));
-      if (favOnly && !on) card.style.display = "none";
-      else if (!searchQuery || card.dataset.name.toLowerCase().includes(searchQuery)) card.style.display = "";
-      else card.style.display = "none";
     });
     try { localStorage.setItem("foodie-favs", JSON.stringify(Array.from(favs))); } catch (e) {}
+    applyFilters();
   }
   $$(".fav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -141,54 +205,132 @@
       renderFavs();
     });
   });
-
-  let favOnly = false;
-  const favToggle = $("#favToggle");
   favToggle.addEventListener("click", () => {
-    favOnly = !favOnly;
-    favToggle.setAttribute("aria-expanded", String(favOnly));
-    favToggle.style.color = favOnly ? "#e03131" : "";
-    if (favOnly && favs.size === 0) {
-      favOnly = false;
-      favToggle.setAttribute("aria-expanded", "false");
-      favToggle.style.color = "";
-      showToast("No favourites yet — tap the heart on any dish");
+    if (!state.favOnly && favs.size === 0) { showToast("No favourites yet — tap the heart on any dish"); return; }
+    state.favOnly = !state.favOnly;
+    favToggle.setAttribute("aria-expanded", String(state.favOnly));
+    favToggle.style.color = state.favOnly ? "#e03131" : "";
+    applyFilters();
+    if (state.favOnly) document.getElementById("Menu").scrollIntoView({ behavior: "smooth" });
+  });
+
+  /* ---------- Smart sticky search ---------- */
+  const overlay = $("#searchOverlay"), searchInput = $("#searchInput"),
+        suggestions = $("#suggestions"), searchHint = $("#searchHint"), searchToggle = $("#searchToggle");
+
+  function scoreDish(dish, q) {
+    if (!q) return 0;
+    const name = dish.name.toLowerCase();
+    let score = 0;
+    if (name === q) score += 120;
+    else if (name.startsWith(q)) score += 80;
+    else if (name.includes(q)) score += 60;
+    q.split(/\s+/).forEach((tok) => {
+      if (tok && dish.keywords.includes(tok)) score += 30;
+      if (tok && dish.category.toLowerCase().includes(tok)) score += 20;
+    });
+    return score;
+  }
+
+  function suggestionItem(dish) {
+    const li = document.createElement("li");
+    li.innerHTML =
+      `<img src="${dish.img}" alt="" loading="lazy" />
+       <span class="sg-main"><span class="sg-name">${dish.name}</span>
+       <span class="sg-sub">${dish.category}${dish.tag ? " · " + dish.tag : ""}</span></span>
+       <span class="sg-price">${inr(dish.price)}</span>
+       <button type="button" class="sg-add" data-add="${dish.name}">Add</button>`;
+    li.addEventListener("click", (e) => {
+      if (e.target.closest("[data-add]")) return;
+      goToDish(dish);
+    });
+    return li;
+  }
+
+  function goToDish(dish) {
+    closeSearch();
+    // Make sure the card is visible before scrolling to it.
+    state.query = ""; state.category = "All"; state.favOnly = false;
+    favToggle.style.color = "";
+    $$(".chip").forEach((c) => c.classList.toggle("active", c.dataset.cat === "All"));
+    applyFilters();
+    dish.card.scrollIntoView({ behavior: "smooth", block: "center" });
+    dish.card.classList.remove("highlight");
+    void dish.card.offsetWidth;
+    dish.card.classList.add("highlight");
+  }
+
+  function renderSuggestions() {
+    const q = searchInput.value.trim().toLowerCase();
+    suggestions.innerHTML = "";
+    if (!q) {
+      searchHint.textContent = "Popular right now: Pizza · Biryani · Burger";
+      const popular = Array.from(catalog.values()).filter((d) => d.tag === "Bestseller")
+        .concat([catalog.get("Burger")]).filter(Boolean);
+      popular.forEach((d) => suggestions.appendChild(suggestionItem(d)));
       return;
     }
-    renderFavs();
-    if (favOnly) document.getElementById("Menu").scrollIntoView({ behavior: "smooth" });
+    searchHint.textContent = "Tap a dish to jump to it, or Add it straight to your cart.";
+    const scored = Array.from(catalog.values())
+      .map((d) => ({ d, s: scoreDish(d, q) })).filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s);
+    if (!scored.length) {
+      const li = document.createElement("li");
+      li.className = "sg-none";
+      li.textContent = `No dish matches "${searchInput.value.trim()}". Try "pizza", "sweet" or "drink".`;
+      suggestions.appendChild(li);
+      return;
+    }
+    const results = scored.slice(0, 5).map((x) => x.d);
+    results.forEach((d) => suggestions.appendChild(suggestionItem(d)));
+    // Similar dishes: same category as the best match, not already shown.
+    const topCat = results[0].category;
+    const similar = Array.from(catalog.values())
+      .filter((d) => d.category === topCat && !results.includes(d)).slice(0, 3);
+    if (similar.length) {
+      const head = document.createElement("li");
+      head.className = "sg-similar-head";
+      head.textContent = "You may also like";
+      suggestions.appendChild(head);
+      similar.forEach((d) => suggestions.appendChild(suggestionItem(d)));
+    }
+  }
+
+  suggestions.addEventListener("click", (e) => {
+    const addBtn = e.target.closest("[data-add]");
+    if (addBtn) addToCart(addBtn.dataset.add);
   });
 
-  /* ---------- Search ---------- */
-  let searchQuery = "";
-  const searchBar = $("#searchBar"), searchInput = $("#searchInput"), searchToggle = $("#searchToggle");
-  function applySearch() {
-    let visible = 0;
-    $$(".menu-card").forEach((card) => {
-      const match = !searchQuery || card.dataset.name.toLowerCase().includes(searchQuery);
-      const favOk = !favOnly || favs.has(card.dataset.name);
-      card.style.display = match && favOk ? "" : "none";
-      if (match && favOk) visible += 1;
-    });
-    $("#noResults").hidden = visible !== 0;
+  function openSearch() {
+    overlay.hidden = false;
+    searchToggle.setAttribute("aria-expanded", "true");
+    renderSuggestions();
+    setTimeout(() => searchInput.focus(), 30);
   }
-  searchToggle.addEventListener("click", () => {
-    const open = searchBar.hidden;
-    searchBar.hidden = !open;
-    searchToggle.setAttribute("aria-expanded", String(open));
-    if (open) {
-      searchInput.focus();
-      document.getElementById("Menu").scrollIntoView({ behavior: "smooth" });
-    }
-  });
-  $("#searchClose").addEventListener("click", () => {
-    searchBar.hidden = true;
+  function closeSearch() {
+    overlay.hidden = true;
     searchToggle.setAttribute("aria-expanded", "false");
-    searchInput.value = ""; searchQuery = ""; applySearch();
+  }
+  searchToggle.addEventListener("click", () => (overlay.hidden ? openSearch() : closeSearch()));
+  $("#searchClose").addEventListener("click", () => {
+    searchInput.value = ""; state.query = ""; applyFilters(); closeSearch();
   });
   searchInput.addEventListener("input", () => {
-    searchQuery = searchInput.value.trim().toLowerCase();
-    applySearch();
+    state.query = searchInput.value.trim().toLowerCase();
+    applyFilters();
+    renderSuggestions();
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const first = $(".suggestions .sg-add");
+    if (first) {
+      const dish = catalog.get(first.dataset.add);
+      if (dish) goToDish(dish);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { closeSearch(); setCartOpen(false); }
   });
 
   /* ---------- Gallery order buttons ---------- */
@@ -215,21 +357,28 @@
     navLinks.classList.remove("open");
     menuToggle.setAttribute("aria-expanded", "false");
     $("i", menuToggle).className = "fa-solid fa-bars";
+    closeSearch();
   }));
+
+  /* ---------- Open-now badge (11 AM – 11 PM) ---------- */
+  (function openBadge() {
+    const el = $("#openBadge");
+    const h = new Date().getHours();
+    if (h >= 11 && h < 23) el.innerHTML = '<span class="dot"></span> Open now · till 11 PM';
+    else { el.classList.add("closed"); el.innerHTML = '<span class="dot"></span> Closed · opens 11 AM'; }
+  })();
 
   /* ---------- Order form ---------- */
   const form = $("#orderForm"), orderTotal = $("#orderTotal");
-  function estimateTotal() {
-    if (cart.size) return cartSum();
+  function typedItemsTotal() {
     const text = fItems.value.trim();
     if (!text) return null;
-    // Single known dish -> price x quantity box; "Name x 2" style entries also work.
     let total = 0, matched = false;
     text.split(",").forEach((part) => {
       const m = part.trim().match(/^(.+?)(?:\s*[×x]\s*(\d+))?$/i);
       if (!m) return;
-      const name = Array.from(dishes.keys()).find((d) => d.toLowerCase() === m[1].trim().toLowerCase());
-      if (name) { matched = true; total += dishes.get(name) * (m[2] ? Number(m[2]) : Number(fQty.value) || 1); }
+      const dish = Array.from(catalog.values()).find((d) => d.name.toLowerCase() === m[1].trim().toLowerCase());
+      if (dish) { matched = true; total += dish.price * (m[2] ? Number(m[2]) : Number(fQty.value) || 1); }
     });
     return matched ? total : null;
   }
@@ -238,11 +387,12 @@
       fItems.value = cartSummary();
       fQty.value = cartQty();
       fQty.disabled = true;
-    } else {
-      fQty.disabled = false;
+      orderTotal.textContent = inr(breakdown(cartSubtotal()).total);
+      return;
     }
-    const t = estimateTotal();
-    orderTotal.textContent = t === null ? "—" : inr(t);
+    fQty.disabled = false;
+    const t = typedItemsTotal();
+    orderTotal.textContent = t === null ? "—" : inr(breakdown(t).total);
   }
   fItems.addEventListener("input", syncOrderForm);
   fQty.addEventListener("input", syncOrderForm);
@@ -258,16 +408,22 @@
       if (!ok) valid = false;
     });
     if (!valid) { form.reportValidity(); return; }
-    const name = $("#fName").value.trim();
-    const address = $("#fAddress").value.trim();
-    const total = estimateTotal();
+    const total = cart.size ? breakdown(cartSubtotal()).total
+      : (typedItemsTotal() !== null ? breakdown(typedItemsTotal()).total : null);
+    const payment = (form.querySelector('input[name="payment"]:checked') || {}).value || "Cash on Delivery";
+    const eta = new Date(Date.now() + 40 * 60000)
+      .toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
     const orderId = "FD-" + Date.now().toString(36).toUpperCase().slice(-6);
     successText.textContent =
-      `Thanks ${name}! Your order (${fItems.value.trim()})` +
+      `Thanks ${$("#fName").value.trim()}! Your order (${fItems.value.trim()})` +
       (total !== null ? ` totalling ${inr(total)}` : "") +
-      ` will be delivered to ${address}. Order ID: ${orderId}.`;
+      ` will be delivered to ${$("#fAddress").value.trim()} by ${eta}. ` +
+      `Payment: ${payment}. Order ID: ${orderId}.`;
     success.hidden = false;
     cart.clear();
+    promoApplied = false;
+    try { localStorage.setItem("foodie-promo", ""); } catch (err) {}
+    promoInput.value = ""; setPromoMsg("", true);
     renderCart();
     form.reset();
     fQty.value = 1;
@@ -283,4 +439,5 @@
   $("#year").textContent = new Date().getFullYear();
   renderFavs();
   renderCart();
+  if (promoApplied) setPromoMsg("FOODIE50 is saved — it applies on orders of ₹299+", true);
 })();
