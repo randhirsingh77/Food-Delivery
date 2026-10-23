@@ -3,8 +3,8 @@
 // Applications > your app > Settings). Until then, the login button shows a
 // "setup in progress" note and nothing else changes on the site.
 const AUTH_CONFIG = {
-  domain: "",      // e.g. "foodie-xyz.auth0.com"
-  clientId: "",    // e.g. "aBcD1234..."
+  domain: "dev-4jg6o5xx41f8s6nk.us.auth0.com",
+  clientId: "5UFiOMgsAn4zkp7hjy9NS8gw6POkttIW",
   connection: "Username-Password-Authentication", // default Auth0 database connection name
 };
 
