@@ -388,9 +388,9 @@ footer .end span { color: var(--brand-bright); font-weight: 600; }
   .gallery-grid { grid-template-columns: 1fr; }
   #orderForm { grid-template-columns: 1fr; }
   .footer-main { grid-template-columns: 1fr 1fr; }
-  .logo img { width: 82px; }
-  .nav { padding: 0.35rem 0.8rem; gap: 0.5rem; }
-  .nav-icons { gap: 0.1rem; }
+  .logo img { width: 76px; }
+  .nav { padding: 0.35rem 0.8rem; gap: 0.4rem; }
+  .nav-icons { gap: 0.05rem; }
   .nav-icons button { min-width: 40px; min-height: 40px; padding: 0.35rem 0.25rem; }
   .hero { padding-left: 1rem; padding-right: 1rem; }
   .menu, .gallery, .about { padding-left: 1rem; padding-right: 1rem; }
