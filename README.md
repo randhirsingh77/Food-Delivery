@@ -1,46 +1,67 @@
 # Food Delivery — Foodie
 
-A food-delivery web app built with **React + TypeScript**. Browse the menu, save favourites, add dishes to the cart and place an order from the working checkout. Login is handled by Auth0 (email/phone + password, or Google).
+A full food-delivery platform built with **React + TypeScript**: a working
+storefront plus role-based dashboards for the owner, the kitchen and
+delivery drivers — the same flows real apps like Zomato/Swiggy run on.
 
-**Live:** https://randhirsingh77.github.io/Food-Delivery/
+**Live:** https://randhirsingh77.github.io/Food-Delivery/ (repository is
+currently private; the site returns when it is public again or on a paid
+plan)
 
-## Features
+## What it does
 
-- Menu with 12 dishes, photos, prices, ratings, veg/non-veg badges and Bestseller tags
-- Working cart — add/remove items, quantities, promo code (FOODIE50), free-delivery progress, totals saved in your browser
-- Favourites — tap the heart on any dish, filter the menu by favourites
-- Smart search — scored matches plus "You may also like" suggestions, tap a result to jump to the dish
-- Category filter chips
-- Login / signup with Auth0 — email or phone number + password, Continue with Google, forgot/change password by email
-- Order form with validation, live total estimate, and an on-page confirmation with order ID, ETA and a live status tracker
-- Fully responsive — mobile menu, layouts adapt from phone to desktop
+**Customers**
+- Menu with 12 dishes, photos, ratings, veg/non-veg badges, Bestseller tags — and live **out-of-stock** states set by the kitchen
+- Working cart — quantities, promo code (FOODIE50), free-delivery progress, totals saved in your browser
+- Favourites, category chips, smart search with "You may also like"
+- **Own account system** — sign up with name + email + phone + password, login with email *or* phone, Continue with Google, forgot/change password
+- Profile with editable details and a **saved-address book**
+- **Live order tracking** — a real map with the rider moving to your door, ETA, the driver's photo, vehicle and rating; rate the driver after delivery
+
+**Owner (admin)** — sales dashboard: revenue, orders, average order value, a 14-day sales graph, top dishes, orders by status
+
+**Kitchen (manager)** — the live order queue (received → preparing → packing), driver overview, and **dish availability toggles**
+
+**Drivers** — duty toggle, orders ready for pickup, accept → picked up → delivered, earnings wallet (₹40 per delivery) and their customer rating
+
+Roles can be switched from the profile page in the demo, so every view can
+be tried with one account.
 
 ## Tech
 
-React 18 · TypeScript · Vite · Zustand (state) · Auth0 (auth) — deployed to GitHub Pages by GitHub Actions on every push to `main`.
+React 18 · TypeScript · Vite · Zustand · Recharts · Leaflet/OpenStreetMap.
+One `FoodieApi` interface, two implementations: HTTP calls to the backend
+when `VITE_API_URL` is set, otherwise a realistic built-in demo dataset in
+the browser — so the site is fully usable before the backend is deployed.
 
 ## Project structure
 
 ```
-index.html              page shell (SEO meta, fonts)
-public/images/          dish photos and site images
+index.html               page shell (SEO meta, fonts)
+public/images/           dish photos and site images
 src/
-  main.tsx              entry — mounts the app inside the Auth0 provider
-  App.tsx               page composition
-  index.css             all styles
-  data/dishes.ts        the menu catalog + search scoring
-  store/useStore.ts     cart / favourites / UI state (Zustand, persisted)
-  utils/pricing.ts      promo + delivery-fee rules
-  components/           Header, CartPanel, AccountPanel, SearchOverlay,
-                        MenuSection, DishCard, Gallery, OrderSection, …
-  auth/AuthProvider.tsx Auth0 setup
+  main.tsx               entry
+  App.tsx                view switching (shop / auth / dashboards / tracking)
+  index.css              all styles — warm bistro design system
+  data/dishes.ts         menu catalog + search scoring
+  utils/pricing.ts       promo + delivery-fee rules (shared with backend)
+  store/useStore.ts      cart / favourites / UI state / session (Zustand)
+  api/                   types, HTTP client (JWT), demo dataset, profile hook
+  screens/               HomeScreen, AuthScreen, ProfileScreen,
+                         AdminScreen, KitchenScreen, DriverScreen, TrackScreen
+  components/            Header, CartPanel, AccountPanel, SearchOverlay,
+                         menu/gallery sections, checkout, dashboard shell
 ```
 
 ## Full stack
 
-This repo is the frontend. The backend lives in
+The backend lives in
 [foodie-server](https://github.com/randhirsingh77/foodie-server) — an
-Express + MongoDB API that saves the orders placed on this site.
+Express + MongoDB API with its own auth (bcrypt + JWT, Google OAuth),
+orders, kitchen/driver flows, tracking and analytics.
+
+Set `VITE_API_URL` (see `.env.example`) to the backend's URL and rebuild
+to connect the two.
 
 ## Run it locally
 
@@ -49,4 +70,5 @@ npm install
 npm run dev
 ```
 
-Build for production with `npm run build` (output in `dist/`).
+Build for production with `npm run build` (output in `dist/`, deployed by
+GitHub Actions on every push to `main` once Pages is set to Actions).

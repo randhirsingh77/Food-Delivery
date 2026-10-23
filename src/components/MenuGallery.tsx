@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { CATEGORIES, DISHES, GALLERY, imgUrl, matchesQuery, type Dish } from "../data/dishes";
 import { inr } from "../utils/pricing";
 import { useStore } from "../store/useStore";
+import { api } from "../api/client";
 
 function Stars() {
   return (
@@ -12,15 +14,16 @@ function Stars() {
   );
 }
 
-function DishCard({ dish }: { dish: Dish }) {
+function DishCard({ dish, outOfStock }: { dish: Dish; outOfStock?: boolean }) {
   const favs = useStore((s) => s.favs);
   const toggleFav = useStore((s) => s.toggleFav);
   const addToCart = useStore((s) => s.addToCart);
   const isFav = favs.includes(dish.name);
 
   return (
-    <article className="menu-card" id={`dish-${dish.name}`}>
+    <article className={`menu-card${outOfStock ? " oos" : ""}`} id={`dish-${dish.name}`}>
       <div className="menu-image"><img src={imgUrl(dish.img)} alt={dish.name} loading="lazy" /></div>
+      {outOfStock && <span className="oos-tag">Out of stock</span>}
       {dish.tag && <span className="dish-tag">{dish.tag}</span>}
       <span className={`veg-badge ${dish.veg ? "veg" : "nonveg"}`}
         title={dish.veg ? "Vegetarian" : "Non-vegetarian"}
@@ -37,8 +40,9 @@ function DishCard({ dish }: { dish: Dish }) {
         <p>{dish.blurb}</p>
         <p className="price">{inr(dish.price)}.00</p>
         <Stars />
-        <button type="button" className="btn-dark order-add" onClick={() => addToCart(dish.name)}>
-          Order Now
+        <button type="button" className="btn-dark order-add" disabled={outOfStock}
+          onClick={() => addToCart(dish.name)}>
+          {outOfStock ? "Unavailable" : "Order Now"}
         </button>
       </div>
     </article>
@@ -53,6 +57,16 @@ export function MenuSection() {
   const favsOnly = useStore((s) => s.favsOnly);
   const favs = useStore((s) => s.favs);
   const query = useStore((s) => s.query);
+  const [stock, setStock] = useState<Record<string, boolean>>({});
+
+  // Kitchen availability (out-of-stock toggles) — refreshed on mount.
+  useEffect(() => {
+    api.menuState().then((rows) => {
+      const map: Record<string, boolean> = {};
+      rows.forEach((r) => { map[r.name] = r.available; });
+      setStock(map);
+    }).catch(() => { /* menu still works without stock data */ });
+  }, []);
 
   const visible = DISHES.filter(
     (d) =>
@@ -74,7 +88,7 @@ export function MenuSection() {
       </div>
       {visible.length === 0 && <p className="no-results">No dishes match. Try another name or category.</p>}
       <div className="menu-grid">
-        {visible.map((d) => <DishCard key={d.name} dish={d} />)}
+        {visible.map((d) => <DishCard key={d.name} dish={d} outOfStock={stock[d.name] === false} />)}
       </div>
     </section>
   );

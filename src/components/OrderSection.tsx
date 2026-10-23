@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { cartCount, cartSubtotal, cartSummary, useStore } from "../store/useStore";
 import { breakdown, inr } from "../utils/pricing";
 import { dishByNameCI, imgUrl } from "../data/dishes";
-import { phoneFromUser } from "./AccountPanel";
+import { api } from "../api/client";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9+ ()-]{10,15}$/;
 const STEPS = ["Order received", "Preparing", "On the way", "Delivered"];
 
-interface PlacedOrder { id: string; text: string }
+interface PlacedOrder { id: string; text: string; tracked: boolean }
 
 // Total for the items as typed in the form ("Pasta × 2, Juice") — lets the
 // estimate stay honest even when the customer edits the text by hand.
@@ -28,16 +27,23 @@ function typedItemsTotal(text: string): number | null {
   return matched ? total : null;
 }
 
+// The checkout. With dishes in the cart, the order goes to the platform
+// API (backend or demo dataset) and gets a real order ID the customer can
+// track live; the form is prefilled from the signed-in profile and can use
+// a saved address. Free-text orders (gallery items that are not menu
+// dishes) confirm on the page, as before.
 export default function OrderSection() {
   const promoApplied = useStore((s) => s.promoApplied);
   const subtotal = useStore(cartSubtotal);
   const summary = useStore(cartSummary);
   const count = useStore(cartCount);
+  const cart = useStore((s) => s.cart);
   const clearCart = useStore((s) => s.clearCart);
   const showToast = useStore((s) => s.showToast);
+  const openTrack = useStore((s) => s.openTrack);
   const orderItemsText = useStore((s) => s.orderItemsText);
   const setOrderItemsText = useStore((s) => s.setOrderItemsText);
-  const { user } = useAuth0();
+  const authProfile = useStore((s) => s.authProfile);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,35 +51,35 @@ export default function OrderSection() {
   const [qty, setQty] = useState(1);
   const [items, setItems] = useState("");
   const [address, setAddress] = useState("");
+  const [addrChoice, setAddrChoice] = useState("");
+  const [deliveryPoint, setDeliveryPoint] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [note, setNote] = useState("");
   const [payment, setPayment] = useState("Cash on Delivery");
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [step, setStep] = useState(1);
+  const [busy, setBusy] = useState(false);
   const prefilled = useRef(false);
 
-  // Keep the form's items/quantity in step with the cart (as the original
-  // site did), unless an order was just placed.
   useEffect(() => { if (!placed) { setItems(summary); setQty(count || 1); } }, [summary, count, placed]);
 
-  // A gallery "Order Now" for a non-menu item drops its name into the form.
   useEffect(() => {
     if (orderItemsText) { setItems(orderItemsText); setOrderItemsText(""); }
   }, [orderItemsText, setOrderItemsText]);
 
-  // Prefill from the Auth0 profile once the user is known.
+  // Prefill from the signed-in profile once it is known.
   useEffect(() => {
-    if (user && !prefilled.current) {
+    if (authProfile && !prefilled.current) {
       prefilled.current = true;
-      if (user.name) setName((v) => v || user.name || "");
-      if (user.email) setEmail((v) => v || user.email || "");
-      const p = phoneFromUser(user);
-      if (p) setPhone((v) => v || p);
+      if (authProfile.name) setName((v) => v || authProfile.name);
+      if (authProfile.email) setEmail((v) => v || authProfile.email);
+      if (authProfile.phone) setPhone((v) => v || authProfile.phone);
     }
-  }, [user]);
+  }, [authProfile]);
 
-  // Advance the status tracker while the confirmation is on screen.
+  // The demo status tracker only animates the free-text fallback orders;
+  // API orders are tracked live on the tracking screen.
   useEffect(() => {
-    if (!placed) return;
+    if (!placed || placed.tracked) return;
     setStep(1);
     const t1 = setTimeout(() => setStep(2), 20000);
     const t2 = setTimeout(() => setStep(3), 45000);
@@ -84,7 +90,16 @@ export default function OrderSection() {
   const estimate = typedTotal !== null ? breakdown(typedTotal, promoApplied) : null;
   const shownTotal = estimate ? estimate.total : null;
 
-  const submit = (e: React.FormEvent) => {
+  const chooseAddress = (id: string) => {
+    setAddrChoice(id);
+    const a = authProfile?.addresses.find((x) => x._id === id);
+    if (a) {
+      setAddress(`${a.line}, ${a.city}${a.pincode ? ` — ${a.pincode}` : ""}`);
+      setDeliveryPoint(a.lat !== undefined && a.lng !== undefined ? { lat: a.lat, lng: a.lng } : undefined);
+    }
+  };
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return showToast("Please enter your name");
     if (!EMAIL_RE.test(email)) return showToast("Please enter a valid email");
@@ -93,11 +108,42 @@ export default function OrderSection() {
     if (!address.trim()) return showToast("Please enter your delivery address");
     if (qty < 1 || qty > 50) return showToast("Quantity must be between 1 and 50");
 
-    const total = shownTotal ?? breakdown(subtotal, promoApplied).total;
+    const cartItems = Object.entries(cart).filter(([, q]) => q > 0).map(([n, q]) => ({ name: n, qty: q }));
     const id = "FD-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+
+    if (cartItems.length > 0) {
+      setBusy(true);
+      try {
+        const order = await api.createOrder({
+          orderId: id,
+          customer: { name: name.trim(), email: email.trim(), phone: phone.trim() },
+          items: cartItems,
+          promoCode: promoApplied ? "FOODIE50" : "",
+          address: address.trim(),
+          note: note.trim(),
+          paymentMethod: payment,
+          deliveryPoint,
+        });
+        const eta = new Date(Date.now() + 40 * 60000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+        setPlaced({
+          id: order.orderId,
+          tracked: true,
+          text: `Order ${order.orderId} confirmed — ${order.items.map((i) => `${i.name} × ${i.qty}`).join(", ")}. Total ${inr(order.amounts.total)} (${payment}). Arriving by about ${eta}.`,
+        });
+        clearCart();
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Could not place the order — please try again");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
+    const total = shownTotal ?? breakdown(subtotal, promoApplied).total;
     const eta = new Date(Date.now() + 40 * 60000).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
     setPlaced({
       id,
+      tracked: false,
       text: `Order ${id} confirmed — ${items}. Total ${inr(total)} (${payment}). Arriving by about ${eta}.`,
     });
     clearCart();
@@ -108,6 +154,8 @@ export default function OrderSection() {
     setItems("");
     setQty(1);
   };
+
+  const saved = authProfile?.addresses || [];
 
   return (
     <section className="order" id="Order">
@@ -144,6 +192,17 @@ export default function OrderSection() {
               <input id="fItems" type="text" placeholder="Food name — or add dishes from the menu" required
                 value={items} onChange={(e) => setItems(e.target.value)} />
             </div>
+            {saved.length > 0 && (
+              <div className="field field-wide">
+                <label htmlFor="fSaved">Saved addresses</label>
+                <select id="fSaved" value={addrChoice} onChange={(e) => chooseAddress(e.target.value)}>
+                  <option value="">Type a new address below…</option>
+                  {saved.map((a) => (
+                    <option key={a._id} value={a._id}>{a.label} — {a.line}, {a.city}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="field field-wide">
               <label htmlFor="fAddress">Address</label>
               <input id="fAddress" type="text" placeholder="Your full delivery address" autoComplete="street-address" required
@@ -166,19 +225,25 @@ export default function OrderSection() {
             <p className="order-total-line">
               Estimated total (incl. delivery): <strong>{shownTotal !== null ? inr(shownTotal) : "—"}</strong>
             </p>
-            <button type="submit" className="btn-primary order-submit">Place Order</button>
-            <p className="form-note">Front-end demo checkout — your order is confirmed on this page, no payment is taken.</p>
+            <button type="submit" className="btn-primary order-submit" disabled={busy}>{busy ? "Placing order…" : "Place Order"}</button>
+            <p className="form-note">Demo checkout — no payment is taken. Orders are saved and can be tracked live.</p>
           </form>
         ) : (
           <div className="order-success" role="status">
             <i className="fa-solid fa-circle-check" aria-hidden="true" />
             <h3>Order placed!</h3>
             <p>{placed.text}</p>
-            <ol className="status-steps" aria-label="Order status">
-              {STEPS.map((label, i) => (
-                <li key={label} className={i < step ? "done" : i === step ? "current" : undefined}>{label}</li>
-              ))}
-            </ol>
+            {placed.tracked ? (
+              <button type="button" className="btn-primary" onClick={() => openTrack(placed.id)}>
+                <i className="fa-solid fa-location-dot" aria-hidden="true" /> Track your order live
+              </button>
+            ) : (
+              <ol className="status-steps" aria-label="Order status">
+                {STEPS.map((label, i) => (
+                  <li key={label} className={i < step ? "done" : i === step ? "current" : undefined}>{label}</li>
+                ))}
+              </ol>
+            )}
             <button type="button" className="btn-dark" onClick={orderAgain}>Order More</button>
           </div>
         )}
