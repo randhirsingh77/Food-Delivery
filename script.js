@@ -9,6 +9,23 @@
   const DELIVERY_FEE = 30;
   const PROMO = { code: "FOODIE50", minOrder: 299, pct: 50, cap: 100 };
 
+  /* ---------- Keep --header-h equal to the REAL header height ----------
+     The fixed header can grow taller than the CSS estimate (on narrow
+     phones the nav wraps to two rows; the open mobile menu adds a row).
+     The search overlay, hero spacing and anchor scroll margins all read
+     --header-h, so measure the header and sync the variable — then the
+     overlay always starts exactly below the bar, never behind it. */
+  const headerEl = $(".site-header");
+  function syncHeaderH() {
+    if (headerEl) {
+      document.documentElement.style.setProperty("--header-h", headerEl.offsetHeight + "px");
+    }
+  }
+  syncHeaderH();
+  if (window.ResizeObserver && headerEl) new ResizeObserver(syncHeaderH).observe(headerEl);
+  window.addEventListener("resize", syncHeaderH);
+  window.addEventListener("load", syncHeaderH);
+
   /* ---------- Dish catalog from the menu cards ---------- */
   const catalog = new Map(); // name -> {name, price, category, keywords, img, card}
   $$(".menu-card").forEach((card) => {
