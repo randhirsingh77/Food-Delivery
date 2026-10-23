@@ -1,16 +1,22 @@
-# Food Delivery — Website UI
+# Food Delivery — Foodie
 
-A static food-delivery website built with HTML and CSS: a landing page for a food-delivery service with a photo menu and gallery sections.
+A food-delivery website built with plain HTML, CSS and JavaScript. Browse the menu, save favourites, add dishes to the cart and place an order from the working front-end checkout.
 
-## What's inside
+**Live:** https://randhirsingh77.github.io/Food-Delivery/
 
-- Hero and service sections for a food-delivery brand
-- Food gallery with category images (biryani, burgers, cakes, drinks and more)
-- Responsive layout for desktop and mobile
+## Features
+
+- Menu with 12 dishes, photos, prices and ratings
+- Working cart — add/remove items, quantities, live total (saved in your browser)
+- Favourites — tap the heart on any dish, filter the menu by favourites
+- Live dish search from the navbar
+- Order form with validation and an on-page order confirmation with order ID
+- Fully responsive — mobile menu, layouts adapt from phone to desktop
+- Images optimised for the web (the whole site ships ~3 MB of images, down from ~17 MB)
 
 ## Tech
 
-HTML · CSS — no frameworks, a front-end fundamentals practice project.
+HTML · CSS · Vanilla JavaScript — no frameworks or build step.
 
 ## Run it
 
