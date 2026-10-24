@@ -205,13 +205,6 @@ export const demoApi: FoodieApi = {
     save(db); return clone(p);
   },
 
-  async demoRole(role: Role) {
-    const db = load(); const p = myProfile(db);
-    p.role = role;
-    if (role === "driver" && !p.driver.vehicle) p.driver.vehicle = "Two-wheeler";
-    save(db); return clone(p);
-  },
-
   async listDrivers() {
     const db = load();
     return Object.values(db.profiles).filter((p) => p.role === "driver")

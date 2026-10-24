@@ -107,7 +107,6 @@ export interface FoodieApi {
   updateProfile(patch: { name?: string; phone?: string; picture?: string; driver?: Partial<DriverInfo> }): Promise<Profile>;
   addAddress(a: Address): Promise<Profile>;
   deleteAddress(id: string): Promise<Profile>;
-  demoRole(role: Role): Promise<Profile>;
   listDrivers(): Promise<DriverSummary[]>;
   createOrder(payload: NewOrderPayload): Promise<Order>;
   myOrders(): Promise<Order[]>;

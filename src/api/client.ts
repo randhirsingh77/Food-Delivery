@@ -1,5 +1,5 @@
 import { DEMO_SESSION_KEY, demoApi, setDemoIdentity } from "./demo";
-import type { Address, DriverSummary, FoodieApi, Profile, Role } from "./types";
+import type { Address, DriverSummary, FoodieApi, Profile } from "./types";
 
 // API selection: when VITE_API_URL points at the foodie-server backend, all
 // calls go over HTTP with our own JWT ("Authorization: Bearer ...");
@@ -71,7 +71,6 @@ const httpApi: FoodieApi = {
   updateProfile: (patch) => req("PUT", "/api/v1/profile", patch),
   addAddress: (a: Address) => req("POST", "/api/v1/profile/addresses", a),
   deleteAddress: (id: string) => req("DELETE", `/api/v1/profile/addresses/${id}`),
-  demoRole: (role: Role) => req("POST", "/api/v1/profile/demo-role", { role }),
   listDrivers: () => req<DriverSummary[]>("GET", "/api/v1/profile/by-role?role=driver"),
   createOrder: (payload) => req("POST", "/api/v1/orders", payload),
   myOrders: () => req("GET", "/api/v1/orders/mine"),

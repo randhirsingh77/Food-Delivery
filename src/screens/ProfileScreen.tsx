@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useProfile } from "../api/useProfile";
-import type { Address, Order, Role } from "../api/types";
+import type { Address, Order } from "../api/types";
 import { inr } from "../utils/pricing";
 import { useStore } from "../store/useStore";
 import DashShell, { RateInput, StatusPill } from "../components/Dash";
-
-const ROLES: { role: Role; label: string; hint: string }[] = [
-  { role: "customer", label: "Customer", hint: "Order food, track deliveries" },
-  { role: "admin", label: "Owner (Admin)", hint: "Sales dashboard & analytics" },
-  { role: "manager", label: "Kitchen (Manager)", hint: "Order queue & stock" },
-  { role: "driver", label: "Driver", hint: "Deliveries & earnings" },
-];
 
 function OrderRow({ order, onRated }: { order: Order; onRated: () => void }) {
   const openTrack = useStore((s) => s.openTrack);
@@ -59,7 +52,6 @@ function OrderRow({ order, onRated }: { order: Order; onRated: () => void }) {
 export default function ProfileScreen() {
   const { profile, setProfile, loading, error } = useProfile();
   const showToast = useStore((s) => s.showToast);
-  const setView = useStore((s) => s.setView);
   const [orders, setOrders] = useState<Order[]>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -77,17 +69,6 @@ export default function ProfileScreen() {
   const saveProfile = async () => {
     try { setProfile(await api.updateProfile({ name, phone })); showToast("Profile updated"); }
     catch (e) { showToast(e instanceof Error ? e.message : "Could not save"); }
-  };
-
-  const switchRole = async (role: Role) => {
-    try {
-      const p = await api.demoRole(role);
-      setProfile(p);
-      showToast(`You are now viewing as ${role}`);
-      if (role === "admin") setView("admin");
-      else if (role === "manager") setView("kitchen");
-      else if (role === "driver") setView("driver");
-    } catch (e) { showToast(e instanceof Error ? e.message : "Role switch failed"); }
   };
 
   const addAddress = async () => {
@@ -132,16 +113,6 @@ export default function ProfileScreen() {
           </div>
           <button type="button" className="btn-primary" onClick={saveProfile}>Save changes</button>
 
-          <h3 className="panel-h">Try the other views (demo)</h3>
-          <p className="dash-note">One login runs the whole platform here — switch your role to open the owner, kitchen and driver dashboards.</p>
-          <div className="role-grid">
-            {ROLES.map((r) => (
-              <button key={r.role} type="button" className={`role-card${profile.role === r.role ? " active" : ""}`} onClick={() => switchRole(r.role)}>
-                <strong>{r.label}</strong>
-                <span>{r.hint}</span>
-              </button>
-            ))}
-          </div>
         </section>
 
         <section className="panel-card">
