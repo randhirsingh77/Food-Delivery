@@ -41,6 +41,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Every screen starts at the top — like a page navigation.
+  useEffect(() => { window.scrollTo(0, 0); }, [view]);
+
   // Escape closes whatever overlay is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

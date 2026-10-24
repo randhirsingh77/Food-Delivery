@@ -474,11 +474,11 @@ select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-
 .form-err { color: #b3261e; font-size: .92rem; margin: 6px 0; }
 .pw-box { border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 6px; }
 .acc-avatar-lg { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
-.acc-initial-lg { width: 64px; height: 64px; border-radius: 50%; background: var(--marigold); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.5rem; }
+.acc-initial-lg { width: 64px; height: 64px; border-radius: 50%; background: var(--brand); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.5rem; }
 .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .role-card { text-align: left; background: #fffaf0; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-height: 44px; }
 .role-card span { color: var(--muted); font-size: .85rem; }
-.role-card.active { border-color: var(--marigold); background: #fff3d6; }
+.role-card.active { border-color: var(--brand); background: #fff3d6; }
 .addr-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .addr-card { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fffaf0; border: 1px solid #f0e4cd; border-radius: 14px; padding: 12px 14px; }
 .addr-card p { color: var(--muted); font-size: .92rem; }
@@ -496,10 +496,10 @@ select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-
 .pill-on_the_way { background: #bfe3ff; color: #0b4f7c; }
 .pill-delivered { background: #cdeecd; color: #14532d; }
 .pill-cancelled { background: #f6caca; color: #7c0b0b; }
-.stars-static { color: var(--marigold); font-size: .85rem; }
+.stars-static { color: var(--brand); font-size: .85rem; }
 .stars-static .dim { color: #e3d5b8; }
 .rate-input button { background: none; border: none; font-size: 1.15rem; color: #e3d5b8; padding: 4px; min-width: 32px; min-height: 32px; }
-.rate-input button.on { color: var(--marigold); }
+.rate-input button.on { color: var(--brand); }
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
 .stat-card { background: #fff; border: 1px solid #f0e4cd; border-radius: 18px; padding: 18px; box-shadow: 0 10px 28px rgba(60,40,5,.05); }
 .stat-label { color: var(--muted); font-size: .86rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
@@ -535,10 +535,12 @@ select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-
 .order-add:disabled { opacity: .55; cursor: not-allowed; }
 .track-steps { list-style: none; display: flex; gap: 0; margin: 18px 0 22px; flex-wrap: wrap; }
 .track-steps li { flex: 1; min-width: 110px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); font-size: .9rem; font-weight: 600; text-align: center; position: relative; padding-top: 4px; }
-.track-steps li::before { content: ""; position: absolute; top: 12px; left: -50%; width: 100%; height: 3px; background: #eee1c6; z-index: 0; }
+.track-steps li::before { content: ""; position: absolute; top: 14px; left: -50%; width: 100%; height: 3px; background: #eee1c6; z-index: 0; }
 .track-steps li:first-child::before { display: none; }
-.track-steps li.done::before, .track-steps li.now::before { background: var(--marigold); }
-.track-steps .ts-dot { background: var(--cream); padding: 0 6px; z-index: 1; font-size: 1.05rem; }
+.track-steps li.done::before, .track-steps li.now::before { background: var(--brand); }
+.track-steps .ts-dot { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid #e8dcc4; display: flex; align-items: center; justify-content: center; z-index: 1; font-size: .78rem; color: #b8a888; }
+.track-steps li.done .ts-dot { background: #2e9e4f; border-color: #2e9e4f; color: #fff; }
+.track-steps li.now .ts-dot { border-color: var(--brand); color: #d98e00; }
 .track-steps li.done { color: #14532d; }
 .track-steps li.now { color: var(--ink); }
 .track-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 22px; align-items: start; }
@@ -546,7 +548,7 @@ select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-
 .map-box { height: 380px; border-radius: 14px; overflow: hidden; }
 .map-pin { background: none; border: none; }
 .map-pin i { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .95rem; box-shadow: 0 4px 12px rgba(0,0,0,.3); border: 2px solid #fff; }
-.map-pin.rest i { background: var(--marigold); }
+.map-pin.rest i { background: var(--brand); }
 .map-pin.home i { background: #221a12; }
 .map-pin.rider i { background: #1f7ac0; }
 .driver-card { display: flex; gap: 14px; align-items: center; margin-top: 12px; background: #fffaf0; border: 1px solid #f0e4cd; border-radius: 14px; padding: 12px 14px; }
@@ -572,3 +574,7 @@ select { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-
 @media (prefers-reduced-motion: reduce) {
   .switch, .switch .knob { transition: none; }
 }
+
+/* Section titles inside profile cards need air above them when they
+   follow a form (the first title in a card stays tight). */
+.profile-cols h3.sec-title:not(:first-child) { margin-top: 28px; }
