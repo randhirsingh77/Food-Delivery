@@ -57,6 +57,7 @@ export default function AdminScreen() {
           <div className="dash-grid">
             <section className="panel-card">
               <h3 className="panel-h">Top dishes</h3>
+              <div className="tbl-scroll">
               <table className="tbl">
                 <thead><tr><th>Dish</th><th>Sold</th><th>Revenue</th></tr></thead>
                 <tbody>
@@ -66,6 +67,7 @@ export default function AdminScreen() {
                   {data.topDishes.length === 0 && <tr><td colSpan={3}>No sales yet.</td></tr>}
                 </tbody>
               </table>
+              </div>
             </section>
             <section className="panel-card">
               <h3 className="panel-h">Orders by status</h3>

@@ -166,7 +166,7 @@ export default function OrderSection() {
         </div>
 
         {!placed ? (
-          <form onSubmit={submit} noValidate>
+          <form className="order-form" onSubmit={submit} noValidate>
             <div className="field">
               <label htmlFor="fName">Name</label>
               <input id="fName" type="text" placeholder="Your name" autoComplete="name" required
@@ -215,12 +215,14 @@ export default function OrderSection() {
             </div>
             <fieldset className="field field-wide pay-group">
               <legend>Payment</legend>
-              {["Cash on Delivery", "UPI"].map((p) => (
-                <label className="pay-option" key={p}>
-                  <input type="radio" name="payment" value={p} checked={payment === p}
-                    onChange={() => setPayment(p)} /> <span>{p}</span>
-                </label>
-              ))}
+              <div className="pay-options">
+                {["Cash on Delivery", "UPI"].map((p) => (
+                  <label className="pay-option" key={p}>
+                    <input type="radio" name="payment" value={p} checked={payment === p}
+                      onChange={() => setPayment(p)} /> <span>{p}</span>
+                  </label>
+                ))}
+              </div>
             </fieldset>
             <p className="order-total-line">
               Estimated total (incl. delivery): <strong>{shownTotal !== null ? inr(shownTotal) : "—"}</strong>

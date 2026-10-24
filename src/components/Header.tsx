@@ -78,7 +78,7 @@ export default function Header() {
               <i className="fa-solid fa-circle-user" aria-hidden="true" />
             )}
           </button>
-          <button type="button" aria-label="Open menu" aria-expanded={s.menuOpen}
+          <button type="button" id="menuToggle" aria-label="Open menu" aria-expanded={s.menuOpen}
             onClick={() => s.setMenuOpen(!s.menuOpen)}>
             <i className="fa-solid fa-bars" aria-hidden="true" />
           </button>
