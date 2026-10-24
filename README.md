@@ -4,9 +4,10 @@ A full food-delivery platform built with **React + TypeScript**: a working
 storefront plus role-based dashboards for the owner, the kitchen and
 delivery drivers — the same flows real apps like Zomato/Swiggy run on.
 
-**Live:** https://randhirsingh77.github.io/Food-Delivery/ (repository is
-currently private; the site returns when it is public again or on a paid
-plan)
+**Live:** https://foodie-tvna.onrender.com — fully working: sign up, order,
+and watch it move through the kitchen to a driver in real time.
+**Backend:** [foodie-server](https://github.com/randhirsingh77/foodie-server)
+(Express + MongoDB), live at https://foodie-server-kwl6.onrender.com
 
 ## What it does
 
