@@ -76,6 +76,18 @@ export interface Analytics {
   statusCounts: Partial<Record<OrderStatus, number>>;
 }
 
+export interface DishMetaData {
+  dietary: { jain: boolean; sattvic: boolean; noOnionGarlic: boolean };
+  allergens: string[];
+  nutritionPerServing: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+}
+
+export interface MenuStateRow extends Partial<DishMetaData> {
+  name: string;
+  available: boolean;
+  isHighProtein?: boolean;
+}
+
 export interface DriverSummary {
   sub: string;
   name: string;
@@ -116,6 +128,7 @@ export interface FoodieApi {
   rate(orderId: string, stars: number, comment?: string): Promise<Order>;
   track(orderId: string): Promise<TrackData>;
   analytics(): Promise<Analytics>;
-  menuState(): Promise<{ name: string; available: boolean }[]>;
+  menuState(): Promise<MenuStateRow[]>;
   setMenuState(name: string, available: boolean): Promise<void>;
+  setDishMeta(name: string, meta: Partial<DishMetaData>): Promise<void>;
 }

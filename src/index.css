@@ -790,3 +790,24 @@ footer .end span { color: var(--brand-bright); font-weight: 600; }
   * { transition: none !important; animation: none !important; }
   .switch, .switch .knob { transition: none; }
 }
+
+/* --- Dietary filters, badges, kitchen dish-details editor --- */
+.diet-chips { margin-top: 8px; }
+.chip.diet { font-size: 0.85rem; }
+.diet-note { color: var(--muted); font-size: 0.82rem; margin: 6px 0 0; }
+.diet-badges { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 2px; }
+.diet-badge { background: var(--surface-warm); border: 1px solid var(--line, #e7dcc8); color: var(--ink-soft); border-radius: 999px; padding: 1px 8px; font-size: 0.72rem; font-weight: 600; }
+.diet-badge.protein { background: #e8f5e2; border-color: #bfe3ae; color: #2e6218; }
+.dish-nutrition { font-size: 0.82rem; color: var(--ink-soft); margin: 2px 0 0; }
+.dish-allergens { font-size: 0.76rem; color: var(--muted); margin: 1px 0 0; }
+.meta-row { flex-wrap: wrap; }
+.meta-editor { flex-basis: 100%; display: grid; gap: 8px; padding: 10px 0 4px; }
+.meta-flags { display: flex; gap: 16px; flex-wrap: wrap; }
+.meta-flag { display: inline-flex; gap: 6px; align-items: center; font-size: 0.88rem; }
+.meta-nums { display: flex; gap: 12px; flex-wrap: wrap; }
+.meta-nums label { display: grid; gap: 2px; font-size: 0.78rem; color: var(--muted); }
+.meta-nums input { width: 84px; }
+.meta-allergens { display: grid; gap: 2px; font-size: 0.78rem; color: var(--muted); max-width: 420px; }
+.group-items, .split-list { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.group-item, .split-row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.eta-reason { font-size: 0.85rem; color: var(--ink-soft); }

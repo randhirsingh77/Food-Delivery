@@ -1,7 +1,7 @@
-import { DISHES, dishByName } from "../data/dishes";
+import { DISHES, dishByName, isHighProteinNutrition } from "../data/dishes";
 import { breakdown } from "../utils/pricing";
 import type {
-  Address, Analytics, DriverSummary, FoodieApi, NewOrderPayload, Order, OrderStatus,
+  Address, Analytics, DishMetaData, DriverSummary, FoodieApi, MenuStateRow, NewOrderPayload, Order, OrderStatus,
   Profile, Role, TrackData,
 } from "./types";
 
@@ -44,7 +44,11 @@ function mkProfile(p: Partial<Profile> & { sub: string }): Profile {
   };
 }
 
-interface DemoDb { profiles: Record<string, Profile>; orders: Order[]; dishState: Record<string, boolean>; accounts: Record<string, { sub: string; pass: string }> }
+interface DemoDb {
+  profiles: Record<string, Profile>; orders: Order[]; dishState: Record<string, boolean>;
+  accounts: Record<string, { sub: string; pass: string }>;
+  dishMeta: Record<string, DishMetaData>;
+}
 
 function seedOrder(i: number, daysAgo: number, status: OrderStatus, userSub: string, driverSub = ""): Order {
   const picks = [DISHES[i % DISHES.length], DISHES[(i + 4) % DISHES.length]];
@@ -100,7 +104,7 @@ function seed(): DemoDb {
   orders.push(seedOrder(21, 0, "on_the_way", "demo-guest", "seed-driver-1"));
   orders.push(seedOrder(22, 0, "delivered", "demo-guest", "seed-driver-2"));
   orders.push(seedOrder(23, 0, "preparing", "demo-guest"));
-  return { profiles, orders, dishState: {}, accounts: {} };
+  return { profiles, orders, dishState: {}, accounts: {}, dishMeta: {} };
 }
 
 // Demo-only password marker (NOT real security — the demo dataset lives in
@@ -111,7 +115,11 @@ export const DEMO_SESSION_KEY = "foodie-demo-session";
 function load(): DemoDb {
   try {
     const raw = localStorage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw) as DemoDb;
+    if (raw) {
+      const db = JSON.parse(raw) as DemoDb;
+      db.dishMeta = db.dishMeta || {};
+      return db;
+    }
   } catch { /* reseed */ }
   const db = seed();
   save(db);
@@ -348,13 +356,37 @@ export const demoApi: FoodieApi = {
     };
   },
 
-  async menuState() {
+  async menuState(): Promise<MenuStateRow[]> {
     const db = load();
-    return Object.entries(db.dishState).map(([name, available]) => ({ name, available }));
+    return DISHES.map((d) => {
+      const meta = db.dishMeta[d.name] || { dietary: d.dietary, allergens: d.allergens, nutritionPerServing: d.nutritionPerServing };
+      return {
+        name: d.name,
+        available: db.dishState[d.name] !== false,
+        dietary: clone(meta.dietary),
+        allergens: [...meta.allergens],
+        nutritionPerServing: { ...meta.nutritionPerServing },
+        isHighProtein: isHighProteinNutrition(meta.nutritionPerServing),
+      };
+    });
   },
 
   async setMenuState(name: string, available: boolean) {
     const db = load();
     db.dishState[name] = available; save(db);
+  },
+
+  async setDishMeta(name: string, meta: Partial<DishMetaData>) {
+    const db = load();
+    const dish = dishByName(name);
+    const base: DishMetaData = db.dishMeta[name] || (dish
+      ? { dietary: dish.dietary, allergens: dish.allergens, nutritionPerServing: dish.nutritionPerServing }
+      : { dietary: { jain: false, sattvic: false, noOnionGarlic: false }, allergens: [], nutritionPerServing: { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 } });
+    db.dishMeta[name] = {
+      dietary: { ...base.dietary, ...(meta.dietary || {}) },
+      allergens: meta.allergens ? [...meta.allergens] : [...base.allergens],
+      nutritionPerServing: { ...base.nutritionPerServing, ...(meta.nutritionPerServing || {}) },
+    };
+    save(db);
   },
 };

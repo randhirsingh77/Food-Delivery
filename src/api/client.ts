@@ -82,6 +82,7 @@ const httpApi: FoodieApi = {
   analytics: () => req("GET", "/api/v1/admin/analytics"),
   menuState: () => req("GET", "/api/v1/menu-state"),
   setMenuState: async (name, available) => { await req("PATCH", `/api/v1/menu-state/${encodeURIComponent(name)}`, { available }); },
+  setDishMeta: async (name, meta) => { await req("PATCH", `/api/v1/menu-state/${encodeURIComponent(name)}`, meta); },
 };
 
 export const api: FoodieApi = DEMO_MODE ? demoApi : httpApi;

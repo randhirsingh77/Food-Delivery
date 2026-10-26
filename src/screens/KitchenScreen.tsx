@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useProfile } from "../api/useProfile";
-import { DISHES } from "../data/dishes";
-import type { DriverSummary, Order } from "../api/types";
+import { DISHES, type Dish } from "../data/dishes";
+import type { DishMetaData, DriverSummary, MenuStateRow, Order } from "../api/types";
 import { inr } from "../utils/pricing";
 import { useStore } from "../store/useStore";
 import DashShell, { StatusPill } from "../components/Dash";
@@ -12,6 +12,66 @@ import DashShell, { StatusPill } from "../components/Dash";
 // toggles that instantly reflect on the menu.
 const NEXT_LABEL: Record<string, string> = { received: "Start preparing", preparing: "Mark packed", packing: "Waiting for driver", on_the_way: "On the way" };
 
+// Editor for one dish's dietary flags + nutrition (kitchen-declared
+// estimates shown on the menu). Saving writes through the menu-state API;
+// the server stores it as the dish's override.
+function DishMetaEditor({ dish, row }: { dish: Dish; row?: MenuStateRow }) {
+  const showToast = useStore((s) => s.showToast);
+  const [open, setOpen] = useState(false);
+  const [dietary, setDietary] = useState(row?.dietary || dish.dietary);
+  const [nutrition, setNutrition] = useState(row?.nutritionPerServing || dish.nutritionPerServing);
+  const [allergens, setAllergens] = useState((row?.allergens || dish.allergens).join(", "));
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const meta: DishMetaData = {
+        dietary,
+        nutritionPerServing: nutrition,
+        allergens: allergens.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean),
+      };
+      await api.setDishMeta(dish.name, meta);
+      showToast(`${dish.name} details saved`);
+    } catch { showToast("Could not save dish details"); }
+    setBusy(false);
+  };
+
+  const num = (key: keyof DishMetaData["nutritionPerServing"]) => (
+    <input type="number" min={0} value={nutrition[key]} aria-label={`${dish.name} ${key}`}
+      onChange={(e) => setNutrition({ ...nutrition, [key]: Number(e.target.value) })} />
+  );
+
+  return (
+    <li className="stock-row meta-row">
+      <span>{dish.name}</span>
+      <button type="button" className="btn-dark sm" onClick={() => setOpen(!open)}>{open ? "Close" : "Edit details"}</button>
+      {open && (
+        <div className="meta-editor">
+          <div className="meta-flags">
+            {(["jain", "sattvic", "noOnionGarlic"] as const).map((k) => (
+              <label key={k} className="meta-flag">
+                <input type="checkbox" checked={dietary[k]} onChange={(e) => setDietary({ ...dietary, [k]: e.target.checked })} />
+                {k === "jain" ? "Jain" : k === "sattvic" ? "Sattvic" : "No onion-garlic"}
+              </label>
+            ))}
+          </div>
+          <div className="meta-nums">
+            <label>kcal {num("kcal")}</label>
+            <label>Protein g {num("proteinG")}</label>
+            <label>Carbs g {num("carbsG")}</label>
+            <label>Fat g {num("fatG")}</label>
+          </div>
+          <label className="meta-allergens">Allergens (comma separated)
+            <input value={allergens} onChange={(e) => setAllergens(e.target.value)} placeholder="gluten, milk" />
+          </label>
+          <button type="button" className="btn-primary sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save details"}</button>
+        </div>
+      )}
+    </li>
+  );
+}
+
 export default function KitchenScreen() {
   const { profile } = useProfile();
   const showToast = useStore((s) => s.showToast);
@@ -19,6 +79,7 @@ export default function KitchenScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [drivers, setDrivers] = useState<DriverSummary[]>([]);
   const [stock, setStock] = useState<Record<string, boolean>>({});
+  const [metaRows, setMetaRows] = useState<Record<string, MenuStateRow>>({});
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -27,8 +88,10 @@ export default function KitchenScreen() {
       setOrders(q);
       setDrivers(d);
       const map: Record<string, boolean> = {};
-      ms.forEach((r) => { map[r.name] = r.available; });
+      const metaMap: Record<string, MenuStateRow> = {};
+      ms.forEach((r) => { map[r.name] = r.available; metaMap[r.name] = r; });
       setStock(map);
+      setMetaRows(metaMap);
       setError("");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not load the queue"); }
   }, []);
@@ -95,6 +158,14 @@ export default function KitchenScreen() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section className="panel-card">
+        <h3 className="panel-h">Dish details — dietary &amp; nutrition</h3>
+        <p className="dash-note">These are the values customers see on the menu (kitchen-declared estimates). Jain also excludes root vegetables — it is not the same as no onion-garlic.</p>
+        <ul className="stock-list">
+          {DISHES.map((d) => <DishMetaEditor key={d.name} dish={d} row={metaRows[d.name]} />)}
         </ul>
       </section>
 
