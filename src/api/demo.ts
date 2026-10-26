@@ -97,6 +97,21 @@ function seed(): DemoDb {
   });
   profiles["seed-manager"] = mkProfile({ sub: "seed-manager", name: "Kitchen Manager", email: "manager@foodie.example", role: "manager" });
 
+  // Login-able demo accounts for one-click demo access (mirrors the
+  // backend's seeded demo accounts; the demo flag travels on the profile).
+  profiles["demo-customer"] = mkProfile({
+    sub: "demo-customer", name: "Demo Customer", email: "demo.customer@foodie.example", phone: "9810000011", role: "customer",
+    addresses: [{ _id: "addr-demo", label: "Home", line: "B-42, Connaught Place", city: "New Delhi", pincode: "110001", lat: 28.6358, lng: 77.2245 }],
+  });
+  profiles["demo-manager"] = mkProfile({ sub: "demo-manager", name: "Demo Manager", email: "demo.manager@foodie.example", phone: "9810000012", role: "manager" });
+  profiles["demo-driver"] = mkProfile({
+    sub: "demo-driver", name: "Demo Driver", email: "demo.driver@foodie.example", phone: "9810000013", role: "driver",
+    driver: { vehicle: "Honda Activa · DL 8C 1001", photoUrl: "", available: true, ratingAvg: 4.9, ratingCount: 47, earnings: 3200, deliveries: 80 },
+  });
+  for (const sub of ["demo-customer", "demo-manager", "demo-driver"]) {
+    (profiles[sub] as Profile & { demo?: boolean }).demo = true;
+  }
+
   const plan: [number, OrderStatus][] = [
     [0, "delivered"], [0, "delivered"], [1, "delivered"], [2, "delivered"], [3, "packing"],
     [4, "delivered"], [5, "preparing"], [6, "delivered"], [7, "received"], [8, "delivered"],
@@ -107,6 +122,9 @@ function seed(): DemoDb {
   orders.push(seedOrder(21, 0, "on_the_way", "demo-guest", "seed-driver-1"));
   orders.push(seedOrder(22, 0, "delivered", "demo-guest", "seed-driver-2"));
   orders.push(seedOrder(23, 0, "preparing", "demo-guest"));
+  // Showcase orders owned by the demo-customer account.
+  orders.push(seedOrder(31, 0, "preparing", "demo-customer"));
+  orders.push(seedOrder(32, 1, "delivered", "demo-customer", "demo-driver"));
   return { profiles, orders, dishState: {}, accounts: {}, dishMeta: {}, groupCarts: [], joinAttempts: {}, subscriptions: [] };
 }
 
@@ -284,6 +302,16 @@ export const demoApi: FoodieApi = {
     const acct = db.accounts[id.toLowerCase()] || db.accounts[id];
     if (!acct || acct.pass !== demoHash(password)) throw new Error("Wrong email/phone or password.");
     const p = db.profiles[acct.sub];
+    setDemoIdentity({ sub: p.sub, email: p.email, name: p.name, picture: p.picture });
+    try { localStorage.setItem(DEMO_SESSION_KEY, p.sub); } catch { /* ignore */ }
+    return { token: "demo-" + p.sub, profile: clone(p) };
+  },
+
+  async demoLogin(role: Role) {
+    const db = load();
+    const sub = `demo-${role}`;
+    const p = db.profiles[sub];
+    if (!p) throw new Error("Demo accounts are not set up yet.");
     setDemoIdentity({ sub: p.sub, email: p.email, name: p.name, picture: p.picture });
     try { localStorage.setItem(DEMO_SESSION_KEY, p.sub); } catch { /* ignore */ }
     return { token: "demo-" + p.sub, profile: clone(p) };

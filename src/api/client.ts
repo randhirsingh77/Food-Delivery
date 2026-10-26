@@ -64,6 +64,7 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 const httpApi: FoodieApi = {
   register: (input) => req("POST", "/api/v1/auth/register", input),
   login: (id, password) => req("POST", "/api/v1/auth/login", { id, password }),
+  demoLogin: (role) => req("POST", "/api/v1/auth/demo-login", { role }),
   googleDemo: async () => { throw new Error("Google sign-in runs through the backend"); },
   forgot: async (email) => { await req("POST", "/api/v1/auth/forgot", { email }); },
   changePassword: async (currentPassword, newPassword) => { await req("POST", "/api/v1/auth/change-password", { currentPassword, newPassword }); },

@@ -46,6 +46,22 @@ export default function AuthScreen() {
     }
   };
 
+  const demo = async (role: "customer" | "manager" | "driver") => {
+    setBusy(true);
+    setError("");
+    try {
+      const { token, profile } = await api.demoLogin(role);
+      saveToken(token);
+      setAuthProfile(profile);
+      showToast("You are exploring a demo account — demo data resets nightly.");
+      setView(role === "manager" ? "kitchen" : role === "driver" ? "driver" : "shop");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Demo accounts are not available right now.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const google = async () => {
     if (DEMO_MODE) {
       setBusy(true);
@@ -122,6 +138,14 @@ export default function AuthScreen() {
         <button type="button" className="btn-google" onClick={google} disabled={busy}>
           <i className="fa-brands fa-google" aria-hidden="true" /> Continue with Google
         </button>
+
+        <div className="auth-divider"><span>just looking around?</span></div>
+        <p className="dash-note">Try a one-click demo account — no sign-up. Demo data resets nightly.</p>
+        <div className="tiffin-actions">
+          <button type="button" className="btn-dark sm" onClick={() => demo("customer")} disabled={busy}>Demo: Customer</button>
+          <button type="button" className="btn-dark sm" onClick={() => demo("manager")} disabled={busy}>Demo: Kitchen</button>
+          <button type="button" className="btn-dark sm" onClick={() => demo("driver")} disabled={busy}>Demo: Driver</button>
+        </div>
         {DEMO_MODE && <p className="dash-note">Demo mode: accounts are stored in this browser. Connect the backend for real accounts.</p>}
       </section>
     </main>

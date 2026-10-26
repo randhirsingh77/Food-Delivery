@@ -32,6 +32,7 @@ export interface Profile {
   phone: string;
   picture: string;
   role: Role;
+  demo?: boolean; // seeded demo account (one-click demo login)
   addresses: Address[];
   driver: DriverInfo;
 }
@@ -175,6 +176,7 @@ export interface FoodieApi {
   // the demo dataset; HTTP mode talks to foodie-server /api/v1/auth.
   register(input: { name: string; email: string; phone: string; password: string }): Promise<{ token: string; profile: Profile }>;
   login(id: string, password: string): Promise<{ token: string; profile: Profile }>;
+  demoLogin(role: Role): Promise<{ token: string; profile: Profile }>;
   googleDemo(): Promise<Profile>;
   forgot(email: string): Promise<void>;
   changePassword(currentPassword: string, newPassword: string): Promise<void>;

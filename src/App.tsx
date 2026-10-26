@@ -11,7 +11,8 @@ import DriverScreen from "./screens/DriverScreen";
 import TrackScreen from "./screens/TrackScreen";
 import GroupCartScreen from "./screens/GroupCartScreen";
 import { useStore } from "./store/useStore";
-import { restoreSession, saveToken } from "./api/client";
+import { api, restoreSession, saveToken } from "./api/client";
+import type { Role } from "./api/types";
 
 // One-page app with view switching: the shop plus the platform screens
 // (auth, profile, owner, kitchen, driver, tracking). On load it restores
@@ -28,6 +29,22 @@ export default function App() {
   const openGroup = useStore((s) => s.openGroup);
 
   useEffect(() => {
+    // One-click demo links land here as ?demo=<role> (or #demo=<role>):
+    // sign straight into the seeded demo account for that role.
+    const demoRole = new URLSearchParams(window.location.search).get("demo")
+      || window.location.hash.match(/demo=([a-z]+)/)?.[1];
+    if (demoRole && ["customer", "manager", "driver"].includes(demoRole)) {
+      api.demoLogin(demoRole as Role)
+        .then(({ token, profile }) => {
+          saveToken(token);
+          setAuthProfile(profile);
+          showToast("You are exploring a demo account — feel free to click around; demo data resets nightly.");
+          useStore.getState().setView(demoRole === "manager" ? "kitchen" : demoRole === "driver" ? "driver" : "shop");
+        })
+        .catch(() => showToast("Demo accounts are not available right now"));
+      history.replaceState(null, "", window.location.pathname);
+      return;
+    }
     // Group-order invite links land here as #group=CODE.
     const gm = window.location.hash.match(/group=([A-Za-z0-9]+)/);
     if (gm) {
