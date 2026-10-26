@@ -9,6 +9,7 @@ import AdminScreen from "./screens/AdminScreen";
 import KitchenScreen from "./screens/KitchenScreen";
 import DriverScreen from "./screens/DriverScreen";
 import TrackScreen from "./screens/TrackScreen";
+import GroupCartScreen from "./screens/GroupCartScreen";
 import { useStore } from "./store/useStore";
 import { restoreSession, saveToken } from "./api/client";
 
@@ -24,8 +25,15 @@ export default function App() {
   const setMenuOpen = useStore((s) => s.setMenuOpen);
   const setAuthProfile = useStore((s) => s.setAuthProfile);
   const showToast = useStore((s) => s.showToast);
+  const openGroup = useStore((s) => s.openGroup);
 
   useEffect(() => {
+    // Group-order invite links land here as #group=CODE.
+    const gm = window.location.hash.match(/group=([A-Za-z0-9]+)/);
+    if (gm) {
+      openGroup(gm[1]);
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
     if (window.location.hash.includes("token=")) {
       const m = window.location.hash.match(/token=([^&]+)/);
       if (m) {
@@ -69,6 +77,7 @@ export default function App() {
       {view === "kitchen" && <KitchenScreen />}
       {view === "driver" && <DriverScreen />}
       {view === "track" && <TrackScreen />}
+      {view === "group" && <GroupCartScreen />}
       {view === "shop" && <Footer />}
       <Toast />
     </>

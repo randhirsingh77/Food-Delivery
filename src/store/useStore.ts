@@ -22,9 +22,10 @@ interface FoodieState {
   favsOnly: boolean;
   category: string;
   query: string;
-  view: "shop" | "profile" | "admin" | "kitchen" | "driver" | "track" | "auth";
+  view: "shop" | "profile" | "admin" | "kitchen" | "driver" | "track" | "auth" | "group";
   authMode: "login" | "signup";
   trackOrderId: string;
+  groupCode: string;
   authProfile: Profile | null; // signed-in user (own auth system)
   orderItemsText: string; // gallery "Order Now" for non-menu items lands here
   toastMsg: string;
@@ -45,6 +46,8 @@ interface FoodieState {
   setView: (v: FoodieState["view"]) => void;
   setAuthMode: (v: "login" | "signup") => void;
   openTrack: (orderId: string) => void;
+  openGroup: (code: string) => void;
+  setGroupCode: (code: string) => void;
   setAuthProfile: (p: Profile | null) => void;
   setOrderItemsText: (v: string) => void;
   showToast: (msg: string) => void;
@@ -89,6 +92,7 @@ export const useStore = create<FoodieState>()((set, get) => ({
   view: "shop",
   authMode: "login",
   trackOrderId: "",
+  groupCode: "",
   authProfile: null,
   orderItemsText: "",
   toastMsg: "",
@@ -121,6 +125,8 @@ export const useStore = create<FoodieState>()((set, get) => ({
   setView: (v) => set({ view: v }),
   setAuthMode: (v) => set({ authMode: v }),
   openTrack: (orderId) => set({ trackOrderId: orderId, view: "track" }),
+  openGroup: (code) => set({ groupCode: code.toUpperCase(), view: "group" }),
+  setGroupCode: (code) => set({ groupCode: code.toUpperCase() }),
   setAuthProfile: (p) => set({ authProfile: p }),
   setOrderItemsText: (v) => set({ orderItemsText: v }),
   showToast: (msg) => set({ toastMsg: msg, toastKey: Date.now() }),

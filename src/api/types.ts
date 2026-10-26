@@ -54,6 +54,9 @@ export interface Order {
   deliveryPoint?: { lat: number; lng: number };
   timeline: { status: OrderStatus; at: string }[];
   rating?: { stars: number; comment?: string; ratedAt?: string } | null;
+  groupCartId?: string;
+  splits?: GroupSplit[];
+  subscriptionId?: string;
   createdAt: string;
 }
 
@@ -81,6 +84,34 @@ export interface Analytics {
   daily: { date: string; revenue: number; orders: number }[];
   topDishes: { name: string; qty: number; revenue: number }[];
   statusCounts: Partial<Record<OrderStatus, number>>;
+}
+
+export interface GroupCartItem {
+  _id: string;
+  addedBySub: string;
+  addedByName: string;
+  name: string;
+  qty: number;
+  priceSnapshot: number;
+}
+
+export interface GroupSplit { sub: string; name: string; amountPaise: number }
+
+export interface GroupCart {
+  _id: string;
+  id: string;
+  hostSub: string;
+  hostName: string;
+  hostUpiId: string;
+  code: string;
+  status: "open" | "locked" | "ordered" | "expired";
+  participants: { sub: string; name: string; joinedAt: string }[];
+  items: GroupCartItem[];
+  version: number;
+  orderId: string;
+  expiresAt: string;
+  splits: GroupSplit[];
+  createdAt: string;
 }
 
 export interface DishMetaData {
@@ -138,4 +169,13 @@ export interface FoodieApi {
   menuState(): Promise<MenuStateRow[]>;
   setMenuState(name: string, available: boolean): Promise<void>;
   setDishMeta(name: string, meta: Partial<DishMetaData>): Promise<void>;
+  // Group ordering: shared cart, per-person split (see GroupCart).
+  createGroupCart(hostUpiId?: string): Promise<GroupCart>;
+  myGroupCarts(): Promise<GroupCart[]>;
+  getGroupCart(code: string): Promise<GroupCart>;
+  joinGroupCart(code: string): Promise<GroupCart>;
+  addGroupItem(code: string, name: string, qty: number): Promise<GroupCart>;
+  removeGroupItem(code: string, itemId: string): Promise<GroupCart>;
+  lockGroupCart(code: string): Promise<GroupCart>;
+  checkoutGroupCart(code: string, input: { address: string; paymentMethod: string; promoCode?: string; name?: string; phone?: string }): Promise<{ cart: GroupCart; order: Order }>;
 }

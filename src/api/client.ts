@@ -83,6 +83,14 @@ const httpApi: FoodieApi = {
   menuState: () => req("GET", "/api/v1/menu-state"),
   setMenuState: async (name, available) => { await req("PATCH", `/api/v1/menu-state/${encodeURIComponent(name)}`, { available }); },
   setDishMeta: async (name, meta) => { await req("PATCH", `/api/v1/menu-state/${encodeURIComponent(name)}`, meta); },
+  createGroupCart: (hostUpiId) => req("POST", "/api/v1/group-carts", { hostUpiId }),
+  myGroupCarts: () => req("GET", "/api/v1/group-carts/mine"),
+  getGroupCart: (code) => req("GET", `/api/v1/group-carts/${encodeURIComponent(code)}`),
+  joinGroupCart: (code) => req("POST", `/api/v1/group-carts/${encodeURIComponent(code)}/join`, {}),
+  addGroupItem: (code, name, qty) => req("POST", `/api/v1/group-carts/${encodeURIComponent(code)}/items`, { name, qty }),
+  removeGroupItem: (code, itemId) => req("DELETE", `/api/v1/group-carts/${encodeURIComponent(code)}/items/${itemId}`),
+  lockGroupCart: (code) => req("POST", `/api/v1/group-carts/${encodeURIComponent(code)}/lock`, {}),
+  checkoutGroupCart: (code, input) => req("POST", `/api/v1/group-carts/${encodeURIComponent(code)}/checkout`, input),
 };
 
 export const api: FoodieApi = DEMO_MODE ? demoApi : httpApi;

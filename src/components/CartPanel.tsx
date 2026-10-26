@@ -43,7 +43,12 @@ export default function CartPanel() {
       </div>
 
       {entries.length === 0 ? (
-        <p className="cart-empty">Your cart is empty. Add something tasty from the menu.</p>
+        <>
+          <p className="cart-empty">Your cart is empty. Add something tasty from the menu.</p>
+          <button type="button" className="btn-dark" onClick={() => { s.setCartOpen(false); s.setView("group"); }}>
+            Start a group order instead
+          </button>
+        </>
       ) : (
         <>
           <ul className="cart-items">
@@ -84,6 +89,9 @@ export default function CartPanel() {
                 : "You have got FREE delivery on this order"}
             </p>
             <button type="button" className="btn-primary" onClick={checkout}>Checkout · {inr(b.total)}</button>
+            <button type="button" className="btn-dark" onClick={() => { s.setCartOpen(false); s.setView("group"); }}>
+              Start a group order — split the bill
+            </button>
           </div>
         </>
       )}

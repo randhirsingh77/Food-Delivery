@@ -1,7 +1,7 @@
 import { DISHES, dishByName, isHighProteinNutrition } from "../data/dishes";
 import { breakdown } from "../utils/pricing";
 import type {
-  Address, Analytics, DishMetaData, DriverSummary, FoodieApi, MenuStateRow, NewOrderPayload, Order, OrderStatus,
+  Address, Analytics, DishMetaData, DriverSummary, FoodieApi, GroupCart, GroupSplit, MenuStateRow, NewOrderPayload, Order, OrderStatus,
   Profile, Role, TrackData,
 } from "./types";
 
@@ -48,6 +48,8 @@ interface DemoDb {
   profiles: Record<string, Profile>; orders: Order[]; dishState: Record<string, boolean>;
   accounts: Record<string, { sub: string; pass: string }>;
   dishMeta: Record<string, DishMetaData>;
+  groupCarts: GroupCart[];
+  joinAttempts: Record<string, { start: number; count: number }>;
 }
 
 function seedOrder(i: number, daysAgo: number, status: OrderStatus, userSub: string, driverSub = ""): Order {
@@ -104,7 +106,7 @@ function seed(): DemoDb {
   orders.push(seedOrder(21, 0, "on_the_way", "demo-guest", "seed-driver-1"));
   orders.push(seedOrder(22, 0, "delivered", "demo-guest", "seed-driver-2"));
   orders.push(seedOrder(23, 0, "preparing", "demo-guest"));
-  return { profiles, orders, dishState: {}, accounts: {}, dishMeta: {} };
+  return { profiles, orders, dishState: {}, accounts: {}, dishMeta: {}, groupCarts: [], joinAttempts: {} };
 }
 
 // Demo-only password marker (NOT real security — the demo dataset lives in
@@ -118,6 +120,8 @@ function load(): DemoDb {
     if (raw) {
       const db = JSON.parse(raw) as DemoDb;
       db.dishMeta = db.dishMeta || {};
+      db.groupCarts = db.groupCarts || [];
+      db.joinAttempts = db.joinAttempts || {};
       return db;
     }
   } catch { /* reseed */ }
@@ -138,6 +142,55 @@ function myProfile(db: DemoDb): Profile {
 }
 
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
+
+// --- Group cart helpers (mirror of the backend's splits util) ------------
+function allocatePaise(totalPaise: number, weights: number[]): number[] {
+  const n = weights.length;
+  if (n === 0) return [];
+  const totalWeight = weights.reduce((s, w) => s + Math.max(0, w), 0);
+  if (totalWeight <= 0) {
+    const base = Math.floor(totalPaise / n);
+    const shares = weights.map(() => base);
+    for (let i = 0; i < totalPaise - base * n; i++) shares[i] += 1;
+    return shares;
+  }
+  const exact = weights.map((w) => (totalPaise * Math.max(0, w)) / totalWeight);
+  const shares = exact.map((x) => Math.floor(x));
+  let leftover = totalPaise - shares.reduce((s, x) => s + x, 0);
+  const byRemainder = exact.map((x, i) => ({ i, r: x - Math.floor(x) })).sort((a, b) => b.r - a.r);
+  for (let k = 0; leftover > 0; k++, leftover--) shares[byRemainder[k % n].i] += 1;
+  return shares;
+}
+
+function groupSplits(cart: GroupCart, promo: boolean): GroupSplit[] {
+  if (!cart.items.length) return [];
+  const subtotal = cart.items.reduce((s, i) => s + i.priceSnapshot * i.qty, 0);
+  const b = breakdown(subtotal, promo);
+  const sharedPaise = (b.delivery - b.discount) * 100;
+  const people = new Map<string, { sub: string; name: string; itemsPaise: number }>();
+  for (const it of cart.items) {
+    const p = people.get(it.addedBySub) || { sub: it.addedBySub, name: it.addedByName || "", itemsPaise: 0 };
+    p.itemsPaise += it.priceSnapshot * 100 * it.qty;
+    people.set(it.addedBySub, p);
+  }
+  const list = [...people.values()];
+  const shares = allocatePaise(sharedPaise, list.map((p) => p.itemsPaise));
+  const splits = list.map((p, i) => ({ sub: p.sub, name: p.name, amountPaise: p.itemsPaise + shares[i] }));
+  const sum = splits.reduce((s, x) => s + x.amountPaise, 0);
+  if (splits.length && sum !== b.total * 100) splits[0].amountPaise += b.total * 100 - sum;
+  return splits;
+}
+
+function groupView(cart: GroupCart, promo = false): GroupCart {
+  return { ...cart, splits: groupSplits(cart, promo) };
+}
+
+function findGroupCart(db: DemoDb, code: string): GroupCart {
+  const cart = db.groupCarts.find((c) => c.code === code.toUpperCase());
+  if (!cart) throw new Error("That group cart has expired or does not exist.");
+  if (cart.status === "open" && new Date(cart.expiresAt).getTime() < Date.now()) cart.status = "expired";
+  return cart;
+}
 
 export const demoApi: FoodieApi = {
   async register(input) {
@@ -390,6 +443,115 @@ export const demoApi: FoodieApi = {
   async setMenuState(name: string, available: boolean) {
     const db = load();
     db.dishState[name] = available; save(db);
+  },
+
+  // --- Group carts (mirror of the backend's groupCartController) --------
+  async createGroupCart(hostUpiId?: string) {
+    const db = load(); const me = myProfile(db);
+    const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    const code = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+    const cart: GroupCart = {
+      _id: "gc-" + Math.random().toString(36).slice(2, 10), id: "",
+      hostSub: me.sub, hostName: me.name || "", hostUpiId: hostUpiId || "",
+      code, status: "open",
+      participants: [{ sub: me.sub, name: me.name || "", joinedAt: new Date().toISOString() }],
+      items: [], version: 0, orderId: "",
+      expiresAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+      splits: [], createdAt: new Date().toISOString(),
+    };
+    cart.id = cart._id;
+    db.groupCarts.unshift(cart); save(db);
+    return clone(cart);
+  },
+
+  async myGroupCarts() {
+    const db = load(); const me = myProfile(db);
+    return clone(db.groupCarts.filter((c) => c.hostSub === me.sub || c.participants.some((p) => p.sub === me.sub)).map((c) => groupView(c)));
+  },
+
+  async getGroupCart(code: string) {
+    const db = load(); const me = myProfile(db);
+    const cart = findGroupCart(db, code);
+    if (!cart.participants.some((p) => p.sub === me.sub) && cart.hostSub !== me.sub) throw new Error("Join this cart first.");
+    return clone(groupView(cart));
+  },
+
+  async joinGroupCart(code: string) {
+    const db = load(); const me = myProfile(db);
+    const key = code.toUpperCase();
+    const att = db.joinAttempts[key];
+    if (!att || Date.now() - att.start > 10 * 60000) db.joinAttempts[key] = { start: Date.now(), count: 0 };
+    db.joinAttempts[key].count += 1;
+    if (db.joinAttempts[key].count > 10) { save(db); throw new Error("Too many attempts. Please wait a bit and try again."); }
+    const cart = findGroupCart(db, code);
+    if (cart.status !== "open") { save(db); throw new Error("This cart is no longer open for joining."); }
+    if (!cart.participants.some((p) => p.sub === me.sub)) {
+      cart.participants.push({ sub: me.sub, name: me.name || "", joinedAt: new Date().toISOString() });
+      cart.version += 1;
+    }
+    save(db);
+    return clone(groupView(cart));
+  },
+
+  async addGroupItem(code: string, name: string, qty: number) {
+    const db = load(); const me = myProfile(db);
+    const cart = findGroupCart(db, code);
+    if (!cart.participants.some((p) => p.sub === me.sub) && cart.hostSub !== me.sub) throw new Error("Join this cart first.");
+    const dish = dishByName(name);
+    if (!dish) throw new Error(`Unknown dish: ${name}`);
+    if (cart.status !== "open") throw new Error("This cart is no longer open.");
+    cart.items.push({ _id: "gi-" + Math.random().toString(36).slice(2, 9), addedBySub: me.sub, addedByName: me.name || "", name, qty, priceSnapshot: dish.price });
+    cart.version += 1; save(db);
+    return clone(groupView(cart));
+  },
+
+  async removeGroupItem(code: string, itemId: string) {
+    const db = load(); const me = myProfile(db);
+    const cart = findGroupCart(db, code);
+    const item = cart.items.find((i) => i._id === itemId);
+    if (!item) throw new Error("No such item in this cart.");
+    if (cart.hostSub !== me.sub && item.addedBySub !== me.sub) throw new Error("You can only remove your own items.");
+    if (cart.status !== "open") throw new Error("This cart is no longer open.");
+    cart.items = cart.items.filter((i) => i._id !== itemId);
+    cart.version += 1; save(db);
+    return clone(groupView(cart));
+  },
+
+  async lockGroupCart(code: string) {
+    const db = load(); const me = myProfile(db);
+    const cart = findGroupCart(db, code);
+    if (cart.hostSub !== me.sub) throw new Error("Only the host can lock the cart.");
+    if (!cart.items.length) throw new Error("The cart is empty.");
+    if (cart.status !== "open") throw new Error("This cart is no longer open.");
+    cart.items.forEach((i) => { const d = dishByName(i.name); if (d) i.priceSnapshot = d.price; });
+    cart.status = "locked"; cart.version += 1; save(db);
+    return clone(groupView(cart));
+  },
+
+  async checkoutGroupCart(code: string, input: { address: string; paymentMethod: string; promoCode?: string; name?: string; phone?: string }) {
+    const db = load(); const me = myProfile(db);
+    const cart = findGroupCart(db, code);
+    if (cart.hostSub !== me.sub) throw new Error("Only the host can check out.");
+    if (cart.status !== "locked") throw new Error("This cart is not locked and ready to check out.");
+    const promo = (input.promoCode || "").toUpperCase() === "FOODIE50";
+    const items = cart.items.map((i) => ({ name: i.name, qty: i.qty, price: i.priceSnapshot }));
+    const subtotal = items.reduce((s, x) => s + x.price * x.qty, 0);
+    const amounts = breakdown(subtotal, promo);
+    const order: Order = {
+      orderId: "FD-G" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+      customer: { name: input.name || cart.hostName || me.name || "Group host", email: me.email || "", phone: input.phone || me.phone || "9810000000" },
+      items, amounts, promoCode: promo ? "FOODIE50" : "",
+      address: input.address, paymentMethod: input.paymentMethod,
+      status: "received", userSub: me.sub, driverSub: "",
+      deliveryPoint: pointForOrder("gc" + cart.code),
+      timeline: [{ status: "received", at: new Date().toISOString() }],
+      rating: null, groupCartId: cart._id, splits: groupSplits(cart, promo),
+      createdAt: new Date().toISOString(),
+    };
+    db.orders.unshift(order);
+    cart.status = "ordered"; cart.orderId = order.orderId; cart.version += 1;
+    save(db);
+    return { cart: clone(groupView(cart, promo)), order: clone(order) };
   },
 
   async setDishMeta(name: string, meta: Partial<DishMetaData>) {
