@@ -65,6 +65,13 @@ export interface TrackData {
   destination: { lat: number; lng: number };
   rider: { lat: number; lng: number } | null;
   etaMinutes: number | null;
+  // Queue-aware estimate while the order is with the kitchen (range +
+  // the reason). Null once the rider is on the way or the order is done.
+  etaLow?: number | null;
+  etaHigh?: number | null;
+  queueAhead?: number | null;
+  avgPrepMinutes?: number | null;
+  etaReason?: string | null;
   driver: { name: string; photoUrl: string; vehicle: string; ratingAvg: number; ratingCount: number } | null;
   rating: { stars: number } | null;
 }

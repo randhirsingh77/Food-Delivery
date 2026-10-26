@@ -312,10 +312,26 @@ export const demoApi: FoodieApi = {
       rider = { lat: RESTAURANT.lat + (dest.lat - RESTAURANT.lat) * progress, lng: RESTAURANT.lng + (dest.lng - RESTAURANT.lng) * progress };
       etaMinutes = Math.max(1, Math.ceil(DEMO_RIDE_MINUTES * (1 - progress)));
     } else if (o.status === "delivered") { rider = dest; etaMinutes = 0; }
+    // Queue-aware estimate, mirroring the backend's eta util with the
+    // demo's shortened ride time: orders ahead × average prep + ride.
+    let etaLow: number | null = null; let etaHigh: number | null = null;
+    let queueAhead: number | null = null; let avgPrepMinutes: number | null = null;
+    let etaReason: string | null = null;
+    if (["received", "preparing", "packing"].includes(o.status)) {
+      queueAhead = db.orders.filter((x) => x.orderId !== o.orderId && ["received", "preparing"].includes(x.status) && x.createdAt < o.createdAt).length;
+      avgPrepMinutes = 12; // demo fallback, same as the backend's
+      const prepWait = o.status === "packing" ? 3 : (queueAhead + 1) * avgPrepMinutes;
+      etaLow = Math.max(2, prepWait + DEMO_RIDE_MINUTES - 2);
+      etaHigh = prepWait + DEMO_RIDE_MINUTES + 3;
+      etaReason = o.status === "packing"
+        ? "Your order is packed and waiting for a rider. Estimated from the live kitchen queue."
+        : `${queueAhead} order${queueAhead === 1 ? "" : "s"} ahead of yours · kitchen averaging ~${avgPrepMinutes} min per order right now. Estimated from the live kitchen queue.`;
+    }
     const dp = o.driverSub ? db.profiles[o.driverSub] : undefined;
     return {
       orderId: o.orderId, status: o.status, timeline: o.timeline,
       restaurant: RESTAURANT, destination: dest, rider, etaMinutes,
+      etaLow, etaHigh, queueAhead, avgPrepMinutes, etaReason,
       driver: dp ? { name: dp.name || "Driver", photoUrl: dp.driver.photoUrl || dp.picture || "", vehicle: dp.driver.vehicle, ratingAvg: dp.driver.ratingAvg, ratingCount: dp.driver.ratingCount } : null,
       rating: o.rating?.stars ? { stars: o.rating.stars } : null,
     } satisfies TrackData;

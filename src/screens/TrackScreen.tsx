@@ -90,10 +90,15 @@ export default function TrackScreen() {
 
             <section className="panel-card">
               <h3 className="panel-h">
-                {data.status === "delivered" ? "Delivered" : data.status === "on_the_way" ? `Arriving in ~${data.etaMinutes} min` : STATUS_LABEL[data.status]}
+                {data.status === "delivered" ? "Delivered" : data.status === "on_the_way" ? `Arriving in ~${data.etaMinutes} min` : data.etaLow != null ? `Arriving in about ${data.etaLow}–${data.etaHigh} min` : STATUS_LABEL[data.status]}
               </h3>
               {data.status === "on_the_way" && <p className="dash-note">Your rider is on the way. The marker moves live.</p>}
-              {data.status !== "on_the_way" && data.status !== "delivered" && <p className="dash-note">The rider will appear on the map once your order is packed and picked up.</p>}
+              {data.status !== "on_the_way" && data.status !== "delivered" && (
+                <>
+                  {data.etaReason && <p className="eta-reason">{data.etaReason}</p>}
+                  <p className="dash-note">The rider will appear on the map once your order is packed and picked up.</p>
+                </>
+              )}
 
               {data.driver ? (
                 <div className="driver-card">
