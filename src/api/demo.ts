@@ -2,7 +2,7 @@ import { DISHES, dishByName, isHighProteinNutrition } from "../data/dishes";
 import { breakdown } from "../utils/pricing";
 import type {
   Address, Analytics, DishMetaData, DriverSummary, FoodieApi, GroupCart, GroupSplit, MenuStateRow, NewOrderPayload, Order, OrderStatus,
-  Profile, Role, TrackData,
+  Profile, Role, Subscription, TiffinPlan, TrackData,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -50,6 +50,7 @@ interface DemoDb {
   dishMeta: Record<string, DishMetaData>;
   groupCarts: GroupCart[];
   joinAttempts: Record<string, { start: number; count: number }>;
+  subscriptions: Subscription[];
 }
 
 function seedOrder(i: number, daysAgo: number, status: OrderStatus, userSub: string, driverSub = ""): Order {
@@ -106,7 +107,7 @@ function seed(): DemoDb {
   orders.push(seedOrder(21, 0, "on_the_way", "demo-guest", "seed-driver-1"));
   orders.push(seedOrder(22, 0, "delivered", "demo-guest", "seed-driver-2"));
   orders.push(seedOrder(23, 0, "preparing", "demo-guest"));
-  return { profiles, orders, dishState: {}, accounts: {}, dishMeta: {}, groupCarts: [], joinAttempts: {} };
+  return { profiles, orders, dishState: {}, accounts: {}, dishMeta: {}, groupCarts: [], joinAttempts: {}, subscriptions: [] };
 }
 
 // Demo-only password marker (NOT real security — the demo dataset lives in
@@ -122,6 +123,7 @@ function load(): DemoDb {
       db.dishMeta = db.dishMeta || {};
       db.groupCarts = db.groupCarts || [];
       db.joinAttempts = db.joinAttempts || {};
+      db.subscriptions = db.subscriptions || [];
       return db;
     }
   } catch { /* reseed */ }
@@ -183,6 +185,75 @@ function groupSplits(cart: GroupCart, promo: boolean): GroupSplit[] {
 
 function groupView(cart: GroupCart, promo = false): GroupCart {
   return { ...cart, splits: groupSplits(cart, promo) };
+}
+
+// --- Tiffin helpers (mirror of the backend's ist util + plans) -----------
+const TIFFIN_PLANS: TiffinPlan[] = [
+  { id: "weekly", name: "Weekly Tiffin", meals: 6, price: 699, periodDays: 7, blurb: "6 thali meals over 7 days — one day off built in." },
+  { id: "monthly", name: "Monthly Tiffin", meals: 24, price: 2499, periodDays: 28, blurb: "24 thali meals over 4 weeks — the PG and hostel favourite." },
+];
+const TIFFIN_POLICY =
+  "Skip or pause before 9:00 PM for the next day. Skipped and paused days extend your plan. Unused meals expire at the end of the plan and are not refunded. Plans never auto-renew.";
+
+const istKey = (d = new Date()) => new Date(d.getTime() + (5 * 60 + 30) * 60000).toISOString().slice(0, 10);
+function addDaysKey(key: string, days: number) {
+  const d = new Date(`${key}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function beforeCutoffFor(targetKey: string) {
+  const today = istKey();
+  if (targetKey <= today) return false;
+  const diff = Math.round((Date.parse(`${targetKey}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
+  if (diff >= 2) return true;
+  const now = new Date(Date.now() + (5 * 60 + 30) * 60000);
+  return now.getUTCHours() * 60 + now.getUTCMinutes() < 21 * 60;
+}
+
+function subView(sub: Subscription): Subscription {
+  const today = istKey();
+  return {
+    ...sub,
+    mealsLeft: Math.max(0, sub.mealsTotal - sub.mealsUsed),
+    todayStatus:
+      sub.status === "paused" && (sub.pausedUntil || "") >= today
+        ? "paused"
+        : sub.skippedDates.includes(today)
+          ? "skipped"
+          : sub.ledger.some((l) => l.type === "materialise" && l.date === today)
+            ? "delivered"
+            : sub.status,
+  };
+}
+
+// Demo stand-in for the backend's externally triggered daily job: when
+// the subscriber's plans are loaded, today's thali is materialised once.
+function materialiseToday(db: DemoDb, sub: Subscription) {
+  const today = istKey();
+  if (sub.status !== "active" && !(sub.status === "paused")) return;
+  if (today < sub.startDate || today > sub.endDate) return;
+  const pausedDay = sub.status === "paused" && (sub.pausedFrom || "") <= today && today <= (sub.pausedUntil || "");
+  if (pausedDay || sub.skippedDates.includes(today)) return;
+  if (sub.ledger.some((l) => l.type === "materialise" && l.date === today)) return;
+  if (sub.mealsUsed >= sub.mealsTotal) return;
+  const thali = dishByName("Ghar Jaisa Thali");
+  if (!thali) return;
+  const order: Order = {
+    orderId: `FD-TF-${sub._id.slice(-6).toUpperCase()}-${today.replace(/-/g, "")}`,
+    customer: { name: sub.userSub === identity.sub ? (identity.name || "Tiffin subscriber") : "Tiffin subscriber", email: identity.email || "subscriber@foodie.example", phone: "9810000000" },
+    items: [{ name: thali.name, qty: 1, price: thali.price }],
+    amounts: breakdown(thali.price, false),
+    address: sub.address, note: `Tiffin subscription (${sub.planName})`, paymentMethod: sub.paymentMethod,
+    status: "received", userSub: sub.userSub, driverSub: "",
+    deliveryPoint: pointForOrder("tf" + sub._id),
+    timeline: [{ status: "received", at: new Date().toISOString() }],
+    rating: null, subscriptionId: sub._id,
+    createdAt: new Date().toISOString(),
+  };
+  db.orders.unshift(order);
+  sub.mealsUsed += 1;
+  sub.ledger.push({ date: today, type: "materialise", mealsDelta: -1, orderId: order.orderId, at: new Date().toISOString() });
+  if (sub.mealsUsed >= sub.mealsTotal) sub.status = "exhausted";
 }
 
 function findGroupCart(db: DemoDb, code: string): GroupCart {
@@ -552,6 +623,95 @@ export const demoApi: FoodieApi = {
     cart.status = "ordered"; cart.orderId = order.orderId; cart.version += 1;
     save(db);
     return { cart: clone(groupView(cart, promo)), order: clone(order) };
+  },
+
+  // --- Tiffin subscriptions (mirror of subscriptionController) -----------
+  async tiffinPlans() {
+    return { plans: clone(TIFFIN_PLANS), policy: TIFFIN_POLICY, cutoff: "21:00 IST, day before" };
+  },
+
+  async subscribe(planId: string, input: { address: string; paymentMethod: string; startDate?: string }) {
+    const db = load(); const me = myProfile(db);
+    const plan = TIFFIN_PLANS.find((p) => p.id === planId);
+    if (!plan) throw new Error("Unknown plan.");
+    if (!input.address.trim()) throw new Error("A delivery address is required.");
+    const today = istKey();
+    let startDate = input.startDate && /^\d{4}-\d{2}-\d{2}$/.test(input.startDate) ? input.startDate : addDaysKey(today, 1);
+    if (startDate < today) startDate = today;
+    const sub: Subscription = {
+      _id: "sub-" + Math.random().toString(36).slice(2, 10), id: "",
+      userSub: me.sub, planId: plan.id, planName: plan.name, pricePaid: plan.price,
+      paymentMethod: input.paymentMethod, address: input.address.trim(),
+      startDate, endDate: addDaysKey(startDate, plan.periodDays - 1),
+      mealsTotal: plan.meals, mealsUsed: 0, status: "active",
+      pausedFrom: "", pausedUntil: "", skippedDates: [],
+      mealsLeft: plan.meals, todayStatus: "active",
+      ledger: [{ date: startDate, type: "purchase", mealsDelta: plan.meals, at: new Date().toISOString() }],
+      createdAt: new Date().toISOString(),
+    };
+    sub.id = sub._id;
+    db.subscriptions.unshift(sub); save(db);
+    return clone(subView(sub));
+  },
+
+  async mySubscriptions() {
+    const db = load(); const me = myProfile(db);
+    const mine = db.subscriptions.filter((s) => s.userSub === me.sub);
+    let changed = false;
+    for (const sub of mine) {
+      if (sub.status === "active" && istKey() > sub.endDate) { sub.status = sub.mealsUsed >= sub.mealsTotal ? "exhausted" : "expired"; changed = true; }
+      if (sub.status === "paused" && sub.pausedUntil && istKey() > sub.pausedUntil) { sub.status = "active"; sub.pausedFrom = ""; sub.pausedUntil = ""; changed = true; }
+      const before = sub.mealsUsed;
+      materialiseToday(db, sub);
+      if (sub.mealsUsed !== before) changed = true;
+    }
+    if (changed) save(db);
+    return clone(mine.map(subView));
+  },
+
+  async skipTiffinDay(id: string, date: string) {
+    const db = load(); const me = myProfile(db);
+    const sub = db.subscriptions.find((s) => s._id === id && s.userSub === me.sub);
+    if (!sub) throw new Error("No such subscription.");
+    if (sub.status !== "active") throw new Error("Only an active plan can skip a day.");
+    if (date < sub.startDate || date > sub.endDate) throw new Error("That date is outside your plan.");
+    if (sub.skippedDates.includes(date)) throw new Error("That day is already skipped.");
+    if (sub.ledger.some((l) => l.type === "materialise" && l.date === date)) throw new Error("That day's meal is already on its way.");
+    if (!beforeCutoffFor(date)) throw new Error("Too late — changes for that day closed at 9:00 PM the day before.");
+    sub.skippedDates.push(date);
+    sub.endDate = addDaysKey(sub.endDate, 1);
+    sub.ledger.push({ date, type: "skip", mealsDelta: 0, at: new Date().toISOString() });
+    save(db);
+    return clone(subView(sub));
+  },
+
+  async pauseTiffin(id: string, days: number) {
+    const db = load(); const me = myProfile(db);
+    const sub = db.subscriptions.find((s) => s._id === id && s.userSub === me.sub);
+    if (!sub) throw new Error("No such subscription.");
+    if (sub.status !== "active") throw new Error("Only an active plan can be paused.");
+    const today = istKey();
+    const from = sub.ledger.some((l) => l.type === "materialise" && l.date === today) ? addDaysKey(today, 1) : today;
+    sub.status = "paused";
+    sub.pausedFrom = from;
+    sub.pausedUntil = addDaysKey(from, days - 1);
+    sub.endDate = addDaysKey(sub.endDate, days);
+    sub.ledger.push({ date: from, type: "pause", mealsDelta: 0, at: new Date().toISOString() });
+    save(db);
+    return clone(subView(sub));
+  },
+
+  async resumeTiffin(id: string) {
+    const db = load(); const me = myProfile(db);
+    const sub = db.subscriptions.find((s) => s._id === id && s.userSub === me.sub);
+    if (!sub) throw new Error("No such subscription.");
+    if (sub.status !== "paused") throw new Error("This plan is not paused.");
+    sub.status = "active";
+    sub.pausedFrom = "";
+    sub.pausedUntil = "";
+    sub.ledger.push({ date: istKey(), type: "resume", mealsDelta: 0, at: new Date().toISOString() });
+    save(db);
+    return clone(subView(sub));
   },
 
   async setDishMeta(name: string, meta: Partial<DishMetaData>) {

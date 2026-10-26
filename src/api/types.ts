@@ -114,6 +114,31 @@ export interface GroupCart {
   createdAt: string;
 }
 
+export interface TiffinPlan { id: string; name: string; meals: number; price: number; periodDays: number; blurb: string }
+
+export interface Subscription {
+  _id: string;
+  id: string;
+  userSub: string;
+  planId: string;
+  planName: string;
+  pricePaid: number;
+  paymentMethod: string;
+  address: string;
+  startDate: string; // IST day key YYYY-MM-DD
+  endDate: string;
+  mealsTotal: number;
+  mealsUsed: number;
+  status: "active" | "paused" | "exhausted" | "expired" | "cancelled";
+  pausedFrom?: string;
+  pausedUntil?: string;
+  skippedDates: string[];
+  mealsLeft: number;
+  todayStatus: string;
+  ledger: { date: string; type: string; mealsDelta: number; orderId?: string; at: string }[];
+  createdAt: string;
+}
+
 export interface DishMetaData {
   dietary: { jain: boolean; sattvic: boolean; noOnionGarlic: boolean };
   allergens: string[];
@@ -178,4 +203,11 @@ export interface FoodieApi {
   removeGroupItem(code: string, itemId: string): Promise<GroupCart>;
   lockGroupCart(code: string): Promise<GroupCart>;
   checkoutGroupCart(code: string, input: { address: string; paymentMethod: string; promoCode?: string; name?: string; phone?: string }): Promise<{ cart: GroupCart; order: Order }>;
+  // Tiffin subscriptions (meal credits).
+  tiffinPlans(): Promise<{ plans: TiffinPlan[]; policy: string; cutoff: string }>;
+  subscribe(planId: string, input: { address: string; paymentMethod: string; startDate?: string }): Promise<Subscription>;
+  mySubscriptions(): Promise<Subscription[]>;
+  skipTiffinDay(id: string, date: string): Promise<Subscription>;
+  pauseTiffin(id: string, days: number): Promise<Subscription>;
+  resumeTiffin(id: string): Promise<Subscription>;
 }

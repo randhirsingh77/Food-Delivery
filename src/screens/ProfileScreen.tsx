@@ -5,6 +5,7 @@ import type { Address, Order } from "../api/types";
 import { inr } from "../utils/pricing";
 import { useStore } from "../store/useStore";
 import DashShell, { RateInput, StatusPill } from "../components/Dash";
+import TiffinSection from "./TiffinSection";
 
 function OrderRow({ order, onRated }: { order: Order; onRated: () => void }) {
   const openTrack = useStore((s) => s.openTrack);
@@ -152,6 +153,8 @@ export default function ProfileScreen() {
           <button type="button" className="btn-dark" onClick={addAddress}>Add address</button>
         </section>
       </div>
+
+      <TiffinSection profile={profile} />
 
       <section className="panel-card">
         <h3 className="panel-h">My orders</h3>

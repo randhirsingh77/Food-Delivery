@@ -811,3 +811,5 @@ footer .end span { color: var(--brand-bright); font-weight: 600; }
 .group-items, .split-list { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
 .group-item, .split-row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .eta-reason { font-size: 0.85rem; color: var(--ink-soft); }
+.tiffin-plan { border-top: 1px solid var(--line, #eee0c8); padding: 10px 0 4px; margin-top: 10px; }
+.tiffin-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }

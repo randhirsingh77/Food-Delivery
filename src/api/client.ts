@@ -91,6 +91,12 @@ const httpApi: FoodieApi = {
   removeGroupItem: (code, itemId) => req("DELETE", `/api/v1/group-carts/${encodeURIComponent(code)}/items/${itemId}`),
   lockGroupCart: (code) => req("POST", `/api/v1/group-carts/${encodeURIComponent(code)}/lock`, {}),
   checkoutGroupCart: (code, input) => req("POST", `/api/v1/group-carts/${encodeURIComponent(code)}/checkout`, input),
+  tiffinPlans: () => req("GET", "/api/v1/subscriptions/plans"),
+  subscribe: (planId, input) => req("POST", "/api/v1/subscriptions", { planId, ...input }),
+  mySubscriptions: () => req("GET", "/api/v1/subscriptions/mine"),
+  skipTiffinDay: (id, date) => req("POST", `/api/v1/subscriptions/${id}/skip`, { date }),
+  pauseTiffin: (id, days) => req("POST", `/api/v1/subscriptions/${id}/pause`, { days }),
+  resumeTiffin: (id) => req("POST", `/api/v1/subscriptions/${id}/resume`, {}),
 };
 
 export const api: FoodieApi = DEMO_MODE ? demoApi : httpApi;
