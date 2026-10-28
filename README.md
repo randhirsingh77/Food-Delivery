@@ -1,6 +1,6 @@
 # Food Delivery — Foodie
 
-A full food-delivery platform built with **React + TypeScript**: a working
+I built a full food-delivery platform with **React + TypeScript**: a working
 storefront plus role-based dashboards for the owner, the kitchen and
 delivery drivers — the same flows real apps like Zomato/Swiggy run on.
 
