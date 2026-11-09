@@ -25,9 +25,6 @@ and watch it move through the kitchen to a driver in real time.
 
 **Drivers** — duty toggle, orders ready for pickup, accept → picked up → delivered, earnings wallet (₹40 per delivery) and their customer rating
 
-Roles can be switched from the profile page in the demo, so every view can
-be tried with one account.
-
 ## Tech
 
 React 18 · TypeScript · Vite · Zustand · Recharts · Leaflet/OpenStreetMap.
